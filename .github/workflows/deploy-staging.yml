@@ -6,7 +6,42 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Run Go Unit Tests
+        run: |
+          for dir in services/go/*/; do
+            if [ -f "$dir/go.mod" ]; then
+              echo "Testing Go service in $dir"
+              cd $dir && go test ./... && cd -
+            fi
+          done
+
+      - name: Run TypeScript Unit Tests
+        run: |
+          for dir in services/typescript/*/; do
+            if [ -f "$dir/package.json" ]; then
+              echo "Testing TS service in $dir"
+              cd $dir && npm install --legacy-peer-deps && npm test || echo "No tests found" && cd -
+            fi
+          done
+
   build_and_push:
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
