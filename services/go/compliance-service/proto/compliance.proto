@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package compliance;
+
+option go_package = "./proto";
+
+service ComplianceService {
+  rpc VerifyBVN(VerifyBVNRequest) returns (VerifyBVNResponse);
+  rpc VerifyNIN(VerifyNINRequest) returns (VerifyNINResponse);
+}
+
+message VerifyBVNRequest {
+  string bvn = 1;
+  string first_name = 2;
+  string last_name = 3;
+}
+
+message VerifyBVNResponse {
+  bool verified = 1;
+  string message = 2;
+  string full_name = 3;
+  string date_of_birth = 4;
+}
+
+message VerifyNINRequest {
+  string nin = 1;
+}
+
+message VerifyNINResponse {
+  bool verified = 1;
+  string message = 2;
+}

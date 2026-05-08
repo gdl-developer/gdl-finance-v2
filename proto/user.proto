@@ -1,0 +1,299 @@
+syntax = "proto3";
+
+package identity;
+
+option go_package = "github.com/gdl/identity-service/proto";
+
+service IdentityService {
+  rpc Register (RegisterRequest) returns (RegisterResponse) {}
+  rpc Login (LoginRequest) returns (LoginResponse) {}
+  rpc VerifyOTP (VerifyOTPRequest) returns (VerifyOTPResponse) {}
+  rpc GetProfile (GetProfileRequest) returns (GetProfileResponse) {}
+  rpc ForgotPassword (ForgotPasswordRequest) returns (ForgotPasswordResponse) {}
+  
+  // RBAC Management
+  rpc CreateRole (CreateRoleRequest) returns (CreateRoleResponse) {}
+  rpc AssignRole (AssignRoleRequest) returns (AssignRoleResponse) {}
+  rpc GetRoles (GetRolesRequest) returns (GetRolesResponse) {}
+  
+  // Business Unit & Branch Management
+  rpc CreateBusinessUnit (CreateBusinessUnitRequest) returns (CreateBusinessUnitResponse) {}
+  rpc GetBusinessUnits (GetBusinessUnitsRequest) returns (GetBusinessUnitsResponse) {}
+  rpc UpdateBusinessUnit (UpdateBusinessUnitRequest) returns (UpdateBusinessUnitResponse) {}
+  rpc DeleteBusinessUnit (DeleteBusinessUnitRequest) returns (DeleteBusinessUnitResponse) {}
+
+  // Security & PINs
+  rpc SetPIN (SetPINRequest) returns (SetPINResponse) {}
+  rpc VerifyPIN (VerifyPINRequest) returns (VerifyPINResponse) {}
+  rpc CheckAccountStatus (CheckStatusRequest) returns (CheckStatusResponse) {}
+
+  // KYC Management
+  rpc UpdateKYCLevel (UpdateKYCRequest) returns (UpdateKYCResponse) {}
+  rpc GetKYCStatus (GetKYCStatusRequest) returns (GetKYCStatusResponse) {}
+
+  // Security Questions
+  rpc GetSecurityQuestions (Empty) returns (SecurityQuestionsResponse) {}
+  rpc SetUserSecurityQuestions (SetUserQuestionsRequest) returns (SetUserQuestionsResponse) {}
+  rpc VerifySecurityAnswer (VerifyAnswerRequest) returns (VerifyAnswerResponse) {}
+
+  // NDPR/GDPR Compliance
+  rpc ExportData (ExportDataRequest) returns (ExportDataResponse) {}
+  rpc DeleteAccount (DeleteAccountRequest) returns (DeleteAccountResponse) {}
+  rpc UpdateConsent (UpdateConsentRequest) returns (UpdateConsentResponse) {}
+}
+
+message Empty {}
+
+message UpdateKYCRequest {
+  string user_id = 1;
+  int32 target_level = 2; // 1, 2, 3
+}
+
+message UpdateKYCResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetKYCStatusRequest {
+  string user_id = 1;
+}
+
+message GetKYCStatusResponse {
+  int32 current_level = 1;
+  string level_name = 2;
+  double daily_limit = 3;
+  double max_balance = 4;
+}
+
+message SecurityQuestionsResponse {
+  repeated QuestionInfo questions = 1;
+}
+
+message QuestionInfo {
+  uint32 id = 1;
+  string question = 2;
+}
+
+message SetUserQuestionsRequest {
+  string user_id = 1;
+  repeated UserQuestionAnswer answers = 2;
+}
+
+message UserQuestionAnswer {
+  uint32 question_id = 1;
+  string answer = 2;
+}
+
+message SetUserQuestionsResponse {
+  bool success = 1;
+}
+
+message VerifyAnswerRequest {
+  string user_id = 1;
+  uint32 question_id = 2;
+  string answer = 3;
+}
+
+message VerifyAnswerResponse {
+  bool success = 1;
+}
+
+message SetPINRequest {
+  string user_id = 1;
+  string pin = 2;
+  string type = 3; // LOGIN or TRANSACTION
+}
+
+message SetPINResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message VerifyPINRequest {
+  string user_id = 1;
+  string pin = 2;
+  string type = 3; // LOGIN or TRANSACTION
+}
+
+message VerifyPINResponse {
+  bool success = 1;
+}
+
+message CheckStatusRequest {
+  string user_id = 1;
+}
+
+message CheckStatusResponse {
+  string status = 1;
+  bool is_pin_set = 2;
+  bool is_transaction_pin_set = 3;
+}
+
+message CreateBusinessUnitRequest {
+  string name = 1;
+  string manager_id = 2;
+}
+
+message CreateBusinessUnitResponse {
+  bool success = 1;
+  string unit_id = 2;
+}
+
+message GetBusinessUnitsRequest {}
+
+message GetBusinessUnitsResponse {
+  repeated BusinessUnitInfo units = 1;
+}
+
+message UpdateBusinessUnitRequest {
+  string id = 1;
+  string name = 2;
+  string manager_id = 3;
+}
+
+message UpdateBusinessUnitResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message DeleteBusinessUnitRequest {
+  string id = 1;
+}
+
+message DeleteBusinessUnitResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message BusinessUnitInfo {
+  string id = 1;
+  string name = 2;
+  string manager_id = 3;
+}
+
+message CreateRoleRequest {
+  string name = 1;
+  repeated string permissions = 2;
+}
+
+message CreateRoleResponse {
+  bool success = 1;
+  string role_id = 2;
+}
+
+message AssignRoleRequest {
+  string user_id = 1;
+  string role_name = 2;
+}
+
+message AssignRoleResponse {
+  bool success = 1;
+}
+
+message GetRolesRequest {}
+
+message GetRolesResponse {
+  repeated RoleInfo roles = 1;
+}
+
+message RoleInfo {
+  string id = 1;
+  string name = 2;
+  repeated string permissions = 3;
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string phone_number = 5;
+  string bvn = 6;
+  bool terms_accepted = 7;
+  bool privacy_policy_accepted = 8;
+  bool marketing_consent = 9;
+  string policy_version = 10;
+}
+
+message RegisterResponse {
+  bool success = 1;
+  string message = 2;
+  string user_id = 3;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string ip_address = 3;
+  string user_agent = 4;
+}
+
+message LoginResponse {
+  bool success = 1;
+  string token = 2;
+  string refresh_token = 3;
+  bool requires_2fa = 4;
+  string message = 5;
+}
+
+message VerifyOTPRequest {
+  string email = 1;
+  string code = 2;
+  string type = 3;
+}
+
+message VerifyOTPResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetProfileRequest {
+  string user_id = 1;
+}
+
+message GetProfileResponse {
+  string email = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string phone_number = 4;
+  string status = 5;
+}
+
+message ForgotPasswordRequest {
+  string email = 1;
+}
+
+message ForgotPasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ExportDataRequest {
+  string user_id = 1;
+}
+
+message ExportDataResponse {
+  string json_data = 1;
+}
+
+message DeleteAccountRequest {
+  string user_id = 1;
+}
+
+message DeleteAccountResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UpdateConsentRequest {
+  string user_id = 1;
+  bool terms_accepted = 2;
+  bool privacy_policy_accepted = 3;
+  bool marketing_consent = 4;
+  string policy_version = 5;
+}
+
+message UpdateConsentResponse {
+  bool success = 1;
+  string message = 2;
+}

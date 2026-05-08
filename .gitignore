@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+dist/
+bin/
+pkg/
+vendor/
+
+# Environment Variables
+.env
+.env.*
+!.env.staging.example
+!.env.production.example
+
+# Logs
+*.log
+v2_build.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Go
+/debug
+/identity-service/identity-service
+/account-service/account-service
+/audit-service/audit-service
+/bankone-connector/bankone-connector
+/compliance-service/compliance-service
+/notification-service/notification-service
+/reporting-service/reporting-service
+/symplus-connector/symplus-connector
+/symplus-service/symplus-service
+/transaction-service/transaction-service

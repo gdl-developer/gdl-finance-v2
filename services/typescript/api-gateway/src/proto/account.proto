@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package account;
+
+option go_package = "github.com/gdl/account-service/proto";
+
+service AccountService {
+  rpc GetBalance (GetBalanceRequest) returns (GetBalanceResponse) {}
+  rpc GetAccount (GetAccountRequest) returns (GetAccountResponse) {}
+}
+
+message GetBalanceRequest {
+  string account_number = 1;
+}
+
+message GetBalanceResponse {
+  string account_number = 1;
+  double balance = 2;
+  string currency = 3;
+}
+
+message GetAccountRequest {
+  string account_number = 1;
+}
+
+message GetAccountResponse {
+  string id = 1;
+  string account_number = 2;
+  string user_id = 3;
+  string status = 4;
+}

@@ -1,0 +1,26 @@
+# Build stage
+FROM golang:latest AS builder
+WORKDIR /app
+
+# Copy all Go services to satisfy relative path dependencies
+COPY . .
+
+# Set working directory to the specific service (passed via build-arg)
+ARG SERVICE_DIR
+WORKDIR /app/${SERVICE_DIR}
+
+RUN apt-get update && apt-get install -y gcc libc6-dev
+RUN go mod download
+RUN CGO_ENABLED=1 GOOS=linux go build -o app main.go
+
+# Run stage
+FROM ubuntu:22.04
+WORKDIR /app
+RUN apt-get update && apt-get install -y ca-certificates sqlite3 libsqlite3-0 && rm -rf /var/lib/apt/lists/*
+
+# Copy binary from the builder's service directory
+ARG SERVICE_DIR
+COPY --from=builder /app/${SERVICE_DIR}/app .
+COPY --from=builder /app/${SERVICE_DIR}/.env .
+
+CMD ["./app"]

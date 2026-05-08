@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package symplus;
+
+option go_package = "github.com/gdl/symplus-connector/proto";
+
+service SymplusService {
+  rpc GetFunds (Empty) returns (SymplusResponse);
+  rpc GetFundAccounts (GetAccountsRequest) returns (SymplusResponse);
+  rpc FundSubscription (FundSubscriptionRequest) returns (SymplusResponse);
+  rpc FundRedemption (FundRedemptionRequest) returns (SymplusResponse);
+  rpc GetFundPrice (FundPriceRequest) returns (SymplusResponse);
+}
+
+message Empty {}
+
+message GetAccountsRequest {
+  string customer_id = 1;
+}
+
+message FundSubscriptionRequest {
+  string customer_id = 1;
+  string fund_id = 2;
+  double amount = 3;
+  string payment_reference = 4;
+  string narration = 5;
+}
+
+message FundRedemptionRequest {
+  string customer_id = 1;
+  string fund_id = 2;
+  double amount = 3;
+  string narration = 4;
+}
+
+message FundPriceRequest {
+  string fund_id = 1;
+}
+
+message SymplusResponse {
+  bool success = 1;
+  string message = 2;
+  string data = 3; // JSON encoded response from Symplus
+}

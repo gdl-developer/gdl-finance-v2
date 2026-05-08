@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package reporting;
+
+option go_package = "./proto";
+
+service ReportingService {
+  rpc GetDashboardStats(DashboardRequest) returns (DashboardResponse);
+  rpc GetUserGrowth(UserGrowthRequest) returns (UserGrowthResponse);
+}
+
+message DashboardRequest {
+  bool is_super_admin = 1;
+}
+
+message DashboardResponse {
+  FlexiStats flexi = 1;
+  AssetStats asset_management = 2;
+  GeneralStats general = 3;
+}
+
+message FlexiStats {
+  double pending_amount = 1;
+  double disbursed_amount = 2;
+  double rejected_amount = 3;
+  double trend = 4;
+  int32 pending_count = 5;
+  int32 disbursed_count = 6;
+}
+
+message AssetStats {
+  double total_aum = 1;
+  int32 total_subscribers = 2;
+  double mmf_value = 3;
+  double canary_value = 4;
+  double income_value = 5;
+}
+
+message GeneralStats {
+  int32 total_users = 1;
+  double growth_trend = 2;
+}
+
+message UserGrowthRequest {
+  int32 days = 1;
+}
+
+message UserGrowthResponse {
+  repeated GrowthPoint points = 1;
+}
+
+message GrowthPoint {
+  string date = 1;
+  int32 count = 2;
+}

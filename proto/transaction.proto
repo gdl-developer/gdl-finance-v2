@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package transaction;
+
+option go_package = "github.com/gdl/transaction-service/proto";
+
+service TransactionService {
+  rpc TransferInternal (TransferRequest) returns (TransferResponse) {}
+  rpc TransferBank (BankTransferRequest) returns (TransferResponse) {}
+  rpc GetTransactionHistory (HistoryRequest) returns (HistoryResponse) {}
+  rpc GetBankList (Empty) returns (BankListResponse) {}
+  rpc AccountEnquiry (EnquiryRequest) returns (EnquiryResponse) {}
+}
+
+message Empty {}
+
+message BankListResponse {
+  repeated BankInfo banks = 1;
+}
+
+message BankInfo {
+  string code = 1;
+  string name = 2;
+}
+
+message EnquiryRequest {
+  string bank_code = 1;
+  string account_number = 2;
+}
+
+message EnquiryResponse {
+  bool success = 1;
+  string account_name = 2;
+  string message = 3;
+}
+
+message TransferRequest {
+  string from_user_id = 1;
+  string to_account = 2;
+  double amount = 3;
+  string pin = 4;
+  string narration = 5;
+}
+
+message BankTransferRequest {
+  string from_user_id = 1;
+  string bank_code = 2;
+  string account_number = 3;
+  double amount = 4;
+  string pin = 5;
+  string narration = 6;
+}
+
+message TransferResponse {
+  bool success = 1;
+  string message = 2;
+  string transaction_ref = 3;
+}
+
+message HistoryRequest {
+  string user_id = 1;
+}
+
+message HistoryResponse {
+  repeated TransactionInfo transactions = 1;
+}
+
+message TransactionInfo {
+  string id = 1;
+  string type = 2;
+  double amount = 3;
+  string status = 4;
+  string created_at = 5;
+  string narration = 6;
+}

@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package bankone;
+
+option go_package = "github.com/gdl/bankone-connector/proto";
+
+service BankOneService {
+  rpc CreateAccountQuick (CreateAccountQuickRequest) returns (BankOneResponse);
+  rpc CreateCustomerAndAccount (CreateCustomerRequest) returns (BankOneResponse);
+  rpc GetBalance (BalanceRequest) returns (BalanceResponse);
+  rpc GetTransactions (TransactionsRequest) returns (TransactionsResponse);
+  rpc AccountEnquiry (AccountEnquiryRequest) returns (BankOneResponse);
+  rpc SetPND (PNDRequest) returns (BankOneResponse);
+  rpc SetLien (LienRequest) returns (BankOneResponse);
+  rpc GetBVNDetails (BVNRequest) returns (BankOneResponse);
+  rpc InterbankTransfer (InterbankTransferRequest) returns (BankOneResponse);
+  rpc GetOtherBankList (Empty) returns (BankOneResponse);
+}
+
+message Empty {}
+
+message InterbankTransferRequest {
+  string amount = 1;
+  string source_account = 2;
+  string destination_account = 3;
+  string destination_bank_code = 4;
+  string destination_account_name = 5;
+  string narration = 6;
+  string reference = 7;
+}
+
+message CreateAccountQuickRequest {
+  string first_name = 1;
+  string last_name = 2;
+  string email = 3;
+  string phone = 4;
+  string account_type = 5;
+}
+
+message CreateCustomerRequest {
+  string first_name = 1;
+  string last_name = 2;
+  string phone = 3;
+  string email = 4;
+}
+
+message BalanceRequest {
+  string account_number = 1;
+}
+
+message BalanceResponse {
+  bool success = 1;
+  double balance = 2;
+  string message = 3;
+}
+
+message TransactionsRequest {
+  string account_number = 1;
+  string from_date = 2;
+  string to_date = 3;
+}
+
+message TransactionsResponse {
+  bool success = 1;
+  repeated TransactionInfo transactions = 2;
+}
+
+message TransactionInfo {
+  string amount = 1;
+  string date = 2;
+  string description = 3;
+  string reference = 4;
+}
+
+message AccountEnquiryRequest {
+  string account_number = 1;
+}
+
+message PNDRequest {
+  string account_number = 2;
+  bool active = 3;
+}
+
+message LienRequest {
+  string account_number = 1;
+  double amount = 2;
+  bool active = 3;
+}
+
+message BVNRequest {
+  string bvn = 1;
+}
+
+message BankOneResponse {
+  bool success = 1;
+  string message = 2;
+  string data = 3; // JSON encoded response from BankOne
+}

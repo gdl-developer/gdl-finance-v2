@@ -1,0 +1,246 @@
+version: '3.8'
+
+networks:
+  gdl-v2-net:
+    driver: bridge
+
+services:
+  # ---------------------------------------------------
+  # Infrastructure Services
+  # ---------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: gdl-v2-postgres
+    networks:
+      - gdl-v2-net
+    environment:
+      POSTGRES_USER: gdl_admin
+      POSTGRES_PASSWORD: gdl_password
+      POSTGRES_DB: gdl_ledger
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: gdl-v2-redis
+    networks:
+      - gdl-v2-net
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    networks:
+      - gdl-v2-net
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    networks:
+      - gdl-v2-net
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  # ---------------------------------------------------
+  # Go Services (Fixed with Shared Build Context)
+  # ---------------------------------------------------
+  identity-service:
+    build:
+      context: ../services/go
+      dockerfile: identity-service/Dockerfile
+      args:
+        SERVICE_DIR: identity-service
+    image: registry.digitalocean.com/gdlfinancev2/identity-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+    depends_on:
+      - postgres
+      - kafka
+
+  account-service:
+    build:
+      context: ../services/go
+      dockerfile: account-service/Dockerfile
+      args:
+        SERVICE_DIR: account-service
+    image: registry.digitalocean.com/gdlfinancev2/account-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+    depends_on:
+      - kafka
+
+  compliance-service:
+    build:
+      context: ../services/go
+      dockerfile: compliance-service/Dockerfile
+      args:
+        SERVICE_DIR: compliance-service
+    image: registry.digitalocean.com/gdlfinancev2/compliance-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  transaction-service:
+    build:
+      context: ../services/go
+      dockerfile: transaction-service/Dockerfile
+      args:
+        SERVICE_DIR: transaction-service
+    image: registry.digitalocean.com/gdlfinancev2/transaction-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  audit-service:
+    build:
+      context: ../services/go
+      dockerfile: audit-service/Dockerfile
+      args:
+        SERVICE_DIR: audit-service
+    image: registry.digitalocean.com/gdlfinancev2/audit-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  bankone-connector:
+    build:
+      context: ../services/go
+      dockerfile: bankone-connector/Dockerfile
+      args:
+        SERVICE_DIR: bankone-connector
+    image: registry.digitalocean.com/gdlfinancev2/bankone-connector:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  notification-service:
+    build:
+      context: ../services/go
+      dockerfile: notification-service/Dockerfile
+      args:
+        SERVICE_DIR: notification-service
+    image: registry.digitalocean.com/gdlfinancev2/notification-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  reporting-service:
+    build:
+      context: ../services/go
+      dockerfile: reporting-service/Dockerfile
+      args:
+        SERVICE_DIR: reporting-service
+    image: registry.digitalocean.com/gdlfinancev2/reporting-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  symplus-connector:
+    build:
+      context: ../services/go
+      dockerfile: symplus-connector/Dockerfile
+      args:
+        SERVICE_DIR: symplus-connector
+    image: registry.digitalocean.com/gdlfinancev2/symplus-connector:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  symplus-service:
+    build:
+      context: ../services/go
+      dockerfile: symplus-service/Dockerfile
+      args:
+        SERVICE_DIR: symplus-service
+    image: registry.digitalocean.com/gdlfinancev2/symplus-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  # ---------------------------------------------------
+  # TypeScript Services
+  # ---------------------------------------------------
+  api-gateway:
+    build:
+      context: ../services/typescript/api-gateway
+      dockerfile: Dockerfile
+    image: registry.digitalocean.com/gdlfinancev2/api-gateway:staging
+    networks:
+      - gdl-v2-net
+    ports:
+      - "3000:3000"
+    env_file: .env.staging
+    depends_on:
+      - identity-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  dms-service:
+    build:
+      context: ../services/typescript/dms-service
+      dockerfile: Dockerfile
+    image: registry.digitalocean.com/gdlfinancev2/dms-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  flexi-service:
+    build:
+      context: ../services/typescript/flexi-service
+      dockerfile: Dockerfile
+    image: registry.digitalocean.com/gdlfinancev2/flexi-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  hpa-service:
+    build:
+      context: ../services/typescript/hpa-service
+      dockerfile: Dockerfile
+    image: registry.digitalocean.com/gdlfinancev2/hpa-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  investment-service:
+    build:
+      context: ../services/typescript/investment-service
+      dockerfile: Dockerfile
+    image: registry.digitalocean.com/gdlfinancev2/investment-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  loan-service:
+    build:
+      context: ../services/typescript/loan-service
+      dockerfile: Dockerfile
+    image: registry.digitalocean.com/gdlfinancev2/loan-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+  saveinvest-service:
+    build:
+      context: ../services/typescript/saveinvest-service
+      dockerfile: Dockerfile
+    image: registry.digitalocean.com/gdlfinancev2/saveinvest-service:staging
+    networks:
+      - gdl-v2-net
+    env_file: .env.staging
+
+volumes:
+  postgres_data:

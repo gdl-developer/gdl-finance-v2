@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package account;
+
+option go_package = "github.com/gdl/account-service/proto";
+
+service AccountService {
+  rpc GetBankOneBalance (GetBalanceRequest) returns (GetBalanceResponse) {}
+  rpc GetUBABalance (GetBalanceRequest) returns (GetBalanceResponse) {}
+  rpc GetRMBBalance (GetBalanceRequest) returns (GetBalanceResponse) {}
+  rpc GetAccount (GetAccountRequest) returns (GetAccountResponse) {}
+  rpc InitializeCBAAccounts (InitializeCBARequest) returns (InitializeCBAResponse) {}
+}
+
+message AccountDetail {
+  string account_number = 1;
+  double balance = 2;
+  string provider = 3;
+}
+
+message InitializeCBARequest {
+  string user_id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string email = 4;
+  string phone = 5;
+  string bvn = 6;
+}
+
+message InitializeCBAResponse {
+  bool success = 1;
+  string message = 2;
+  string bankone_nuban = 3;
+  string symplus_id = 4;
+}
+
+message GetBalanceRequest {
+  string user_id = 1;
+}
+
+message GetBalanceResponse {
+  string account_number = 1;
+  double balance = 2;
+  string currency = 3;
+}
+
+message GetAccountRequest {
+  string account_number = 1;
+}
+
+message GetAccountResponse {
+  string id = 1;
+  string account_number = 2;
+  string user_id = 3;
+  string status = 4;
+}
