@@ -35,7 +35,7 @@ func StartKafkaConsumer(db *gorm.DB, rdb *RedisClient) {
 	go consumeTopic(db, kafkaBrokers, "balance-updates", "account-service-balance-group", func(d *gorm.DB, b []byte) error {
 		return handleBalanceUpdate(d, rdb, b)
 	})
-	
+
 	// Consumer for investment processing
 	go consumeTopic(db, kafkaBrokers, "investment-processed", "account-service-invest-group", handleInvestmentProcessed)
 }
@@ -115,7 +115,7 @@ func handleInvestmentProcessed(db *gorm.DB, data []byte) error {
 			Status:        event.Status,
 			ProcessedAt:   time.Now(),
 		}).Error
-		
+
 		// Note: We might want to deduct balance here if we haven't already.
 		// In a real flow, balance deduction usually happens during "PENDING" or "PROCESSING"
 		// and is reversed if it "FAILED".

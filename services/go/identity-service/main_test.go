@@ -5,10 +5,10 @@ import (
 	"net"
 	"testing"
 
+	pb "gdl-v2-identity/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
-	pb "gdl-v2-identity/proto"
 )
 
 const bufSize = 1024 * 1024
@@ -40,14 +40,14 @@ func TestHealthCheck(t *testing.T) {
 	}
 	defer conn.Close()
 	client := pb.NewIdentityServiceClient(conn)
-	
+
 	// Assuming there is a HealthCheck method in the proto
 	// If not, we can test a simple Login or Register with empty params
 	resp, err := client.ValidateToken(ctx, &pb.TokenRequest{Token: "invalid-token"})
 	if err != nil {
 		t.Errorf("ValidateToken failed: %v", err)
 	}
-	
+
 	if resp.Valid != false {
 		t.Errorf("Expected token to be invalid, got valid")
 	}

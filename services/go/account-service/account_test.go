@@ -23,7 +23,7 @@ func TestAccountLocking(t *testing.T) {
 	ctx := context.Background()
 
 	lockKey := "lock:account:12345"
-	
+
 	// 1. First attempt to acquire lock
 	success, err := AcquireLock(ctx, rdb, lockKey, 5*time.Second)
 	if err != nil || !success {
@@ -47,9 +47,9 @@ func TestAccountLocking(t *testing.T) {
 func TestLedgerBalance(t *testing.T) {
 	// Mock database setup
 	db := SetupTestDB() // Helper to create in-memory SQLite for testing
-	
+
 	repo := &AccountRepository{DB: db}
-	
+
 	account := &Account{AccountNumber: "0012345678", Balance: 1000.0}
 	db.Create(account)
 
@@ -61,7 +61,7 @@ func TestLedgerBalance(t *testing.T) {
 
 	var updatedAccount Account
 	db.Where("account_number = ?", "0012345678").First(&updatedAccount)
-	
+
 	if updatedAccount.Balance != 1500.0 {
 		t.Errorf("Balance mismatch! Expected 1500, got %f", updatedAccount.Balance)
 	}

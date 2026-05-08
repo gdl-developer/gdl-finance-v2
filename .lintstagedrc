@@ -1,6 +1,6 @@
 {
-  "*.go": "gofmt -w",
-  "*.ts": "prettier --write",
-  "*.js": "prettier --write",
-  "*.json": "prettier --write"
+  "*.go": "/opt/homebrew/bin/gofmt -w",
+  "*.ts": "npx prettier --write",
+  "*.js": "npx prettier --write",
+  "*.json": "npx prettier --write"
 }

@@ -61,7 +61,7 @@ func (r *RedisClient) GetBalance(accountNumber string) (float64, bool) {
 func (r *RedisClient) AcquireLock(ctx context.Context, key string, expiration time.Duration) (bool, string) {
 	lockKey := fmt.Sprintf("lock:%s", key)
 	token := fmt.Sprintf("%d", time.Now().UnixNano())
-	
+
 	// Use SET with NX (Only if not exist) and PX (Expiration)
 	success, err := r.client.SetNX(ctx, lockKey, token, expiration).Result()
 	if err != nil || !success {
@@ -73,7 +73,7 @@ func (r *RedisClient) AcquireLock(ctx context.Context, key string, expiration ti
 // ReleaseLock releases a distributed lock if the token matches.
 func (r *RedisClient) ReleaseLock(ctx context.Context, key string, token string) bool {
 	lockKey := fmt.Sprintf("lock:%s", key)
-	
+
 	// Lua script to ensure atomicity: only delete if the token matches
 	script := `
 		if redis.call("get", KEYS[1]) == ARGV[1] then

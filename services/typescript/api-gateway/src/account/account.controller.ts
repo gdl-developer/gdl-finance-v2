@@ -11,14 +11,20 @@ export class AccountController {
 
   @Get()
   async getWallets(@Req() req: AuthenticatedRequest) {
-    const bankone = await firstValueFrom(this.accountService.getBankOneBalance(req.user.user_id));
-    const uba = await firstValueFrom(this.accountService.getUBABalance(req.user.user_id));
-    const rmb = await firstValueFrom(this.accountService.getRMBBalance(req.user.user_id));
-    
+    const bankone = await firstValueFrom(
+      this.accountService.getBankOneBalance(req.user.user_id),
+    );
+    const uba = await firstValueFrom(
+      this.accountService.getUBABalance(req.user.user_id),
+    );
+    const rmb = await firstValueFrom(
+      this.accountService.getRMBBalance(req.user.user_id),
+    );
+
     return {
       success: true,
       message: 'Virtual wallets retrieved successfully',
-      data: [bankone, uba, rmb]
+      data: [bankone, uba, rmb],
     };
   }
 
@@ -43,7 +49,10 @@ export class AccountController {
   }
 
   @Post('virtual-accounts')
-  createVirtualAccount(@Req() req: AuthenticatedRequest, @Body('bvn') bvn: string) {
+  createVirtualAccount(
+    @Req() req: AuthenticatedRequest,
+    @Body('bvn') bvn: string,
+  ) {
     return this.accountService.createVirtualAccount(req.user.user_id, bvn);
   }
 

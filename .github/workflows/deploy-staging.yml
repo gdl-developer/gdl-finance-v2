@@ -2,7 +2,7 @@ name: Deploy GDL V2 Staging
 
 on:
   push:
-    branches: [ develop ]
+    branches: [develop]
   workflow_dispatch:
 
 jobs:
@@ -15,12 +15,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: "1.21"
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Run Go Unit Tests
         run: |
@@ -45,14 +45,27 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [
-          identity-service, account-service, audit-service, 
-          bankone-connector, compliance-service, notification-service, 
-          reporting-service, symplus-connector, symplus-service, 
-          transaction-service, api-gateway, dms-service, 
-          flexi-service, hpa-service, investment-service, 
-          loan-service, saveinvest-service, user-service
-        ]
+        service:
+          [
+            identity-service,
+            account-service,
+            audit-service,
+            bankone-connector,
+            compliance-service,
+            notification-service,
+            reporting-service,
+            symplus-connector,
+            symplus-service,
+            transaction-service,
+            api-gateway,
+            dms-service,
+            flexi-service,
+            hpa-service,
+            investment-service,
+            loan-service,
+            saveinvest-service,
+            user-service,
+          ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -68,7 +81,7 @@ jobs:
       - name: Build and Push Service
         run: |
           SERVICE_NAME="${{ matrix.service }}"
-          
+
           # Check Go services first
           if [ -d "./services/go/$SERVICE_NAME" ]; then
             docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging --build-arg SERVICE_DIR=$SERVICE_NAME -f ./services/go/$SERVICE_NAME/Dockerfile ./services/go
@@ -79,7 +92,7 @@ jobs:
           elif [ "$SERVICE_NAME" == "user-service" ]; then
             docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/user-service:staging ./services/typescript/user-service
           fi
-          
+
           docker push registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging
 
   deploy:

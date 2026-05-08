@@ -1,9 +1,9 @@
 package main
 
 import (
-	"testing"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"testing"
 )
 
 func TestTransactionProcessing(t *testing.T) {

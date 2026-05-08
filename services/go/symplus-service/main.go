@@ -30,7 +30,7 @@ func main() {
 	}
 
 	client := NewSymplusClient(baseURL, clientKey, privateKey, publicKey)
-	
+
 	// Start background key refresher
 	go client.StartKeyRefresher()
 
