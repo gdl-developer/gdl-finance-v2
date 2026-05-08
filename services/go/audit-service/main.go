@@ -15,13 +15,13 @@ import (
 
 type AuditLog struct {
 	gorm.Model
-	UserID           string `json:"user_id"`
-	UserType         string `json:"user_type"`
-	UserName         string `json:"user_name"`
-	Roles            string `json:"roles"`
-	ActionPerformed  string `json:"action_performed"`
-	IPAddress        string `json:"ip_address"`
-	Attributes       string `json:"attributes"`
+	UserID          string `json:"user_id"`
+	UserType        string `json:"user_type"`
+	UserName        string `json:"user_name"`
+	Roles           string `json:"roles"`
+	ActionPerformed string `json:"action_performed"`
+	IPAddress       string `json:"ip_address"`
+	Attributes      string `json:"attributes"`
 }
 
 func startDataRetentionWorker(db *gorm.DB) {

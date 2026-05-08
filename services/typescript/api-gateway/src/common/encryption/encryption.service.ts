@@ -27,7 +27,11 @@ export class EncryptionService {
    * Decrypts a hybrid-encrypted payload.
    * Expects: { encryptedData, encryptedKey, iv }
    */
-  decrypt(payload: { encryptedData: string; encryptedKey: string; iv: string }): any {
+  decrypt(payload: {
+    encryptedData: string;
+    encryptedKey: string;
+    iv: string;
+  }): any {
     try {
       const encryptedKeyBuffer = Buffer.from(payload.encryptedKey, 'base64');
 
@@ -44,11 +48,11 @@ export class EncryptionService {
       // 2. Decrypt the Data using the AES Key
       const iv = Buffer.from(payload.iv, 'base64');
       const decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, iv);
-      
+
       const fullBuffer = Buffer.from(payload.encryptedData, 'base64');
       const tag = fullBuffer.slice(-16);
       const data = fullBuffer.slice(0, -16);
-      
+
       decipher.setAuthTag(tag);
       let decrypted = decipher.update(data, undefined, 'utf8');
       decrypted += decipher.final('utf8');
@@ -65,11 +69,11 @@ export class EncryptionService {
   encrypt(data: any, aesKeyBase64: string, ivBase64: string): string {
     const aesKey = Buffer.from(aesKeyBase64, 'base64');
     const iv = Buffer.from(ivBase64, 'base64');
-    
+
     const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
     let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'base64');
     encrypted += cipher.final('base64');
-    
+
     const tag = cipher.getAuthTag();
     return encrypted + tag.toString('base64');
   }

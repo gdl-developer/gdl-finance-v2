@@ -77,7 +77,7 @@ func (c *SymplusClient) call(method, path string, body interface{}) (*pb.Symplus
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		hash := c.generateHash()
 		url := c.BaseURL + path
-		
+
 		var reqBody io.Reader
 		if body != nil {
 			b, _ := json.Marshal(body)
@@ -125,7 +125,7 @@ func (c *SymplusClient) fetchNewPublicKey() {
 
 	log.Println("🔄 Fetching new public key from Housemoni ORDS...")
 	url := fmt.Sprintf("https://clientportal.housemoni.ng/ords/api/core/v3/GetKey/%s/", c.ClientKey)
-	
+
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Printf("Failed to fetch public key: %v", err)

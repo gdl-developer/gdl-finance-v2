@@ -19,8 +19,8 @@ type Account struct {
 }
 
 type BalanceSyncLog struct {
-	ID            uint      `gorm:"primaryKey"`
-	AccountNumber string    `gorm:"index"`
+	ID            uint   `gorm:"primaryKey"`
+	AccountNumber string `gorm:"index"`
 	OldBalance    float64
 	NewBalance    float64
 	Source        string // e.g., "BANKONE_WEBHOOK", "RECONCILIATION_JOB"

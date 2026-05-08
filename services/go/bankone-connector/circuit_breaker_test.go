@@ -10,7 +10,7 @@ import (
 
 func TestCircuitBreaker(t *testing.T) {
 	failureCount := 0
-	
+
 	// Mock server that fails
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		failureCount++
@@ -20,11 +20,11 @@ func TestCircuitBreaker(t *testing.T) {
 
 	// Configure client to use mock server
 	client := &BankOneClient{
-		BaseURL: server.URL,
+		BaseURL:    server.URL,
 		HTTPClient: &http.Client{Timeout: 1 * time.Second},
 		CB: &CircuitBreaker{
 			FailureThreshold: 3,
-			RetryTimeout:    2 * time.Second,
+			RetryTimeout:     2 * time.Second,
 		},
 	}
 

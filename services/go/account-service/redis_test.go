@@ -10,7 +10,7 @@ import (
 )
 
 func TestDistributedLock(t *testing.T) {
-	// Setup: Requires a local Redis or a mock. 
+	// Setup: Requires a local Redis or a mock.
 	// For this test, we assume a local Redis at localhost:6379
 	rdb := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",

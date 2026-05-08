@@ -16,11 +16,11 @@ import { EncryptionModule } from './common/encryption/encryption.module';
 @Module({
   imports: [
     AuthModule,
-    AdminModule, 
-    AccountModule, 
-    ReportingModule, 
-    FlexiModule, 
-    InvestmentModule, 
+    AdminModule,
+    AccountModule,
+    ReportingModule,
+    FlexiModule,
+    InvestmentModule,
     TransferModule,
     EncryptionModule,
     ThrottlerModule.forRoot([

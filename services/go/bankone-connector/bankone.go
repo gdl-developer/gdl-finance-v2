@@ -13,11 +13,11 @@ import (
 )
 
 type CircuitBreaker struct {
-	FailureCount     int
-	Threshold        int
-	LastFailureTime  time.Time
-	OpenDuration     time.Duration
-	State            string // "CLOSED", "OPEN", "HALF-OPEN"
+	FailureCount    int
+	Threshold       int
+	LastFailureTime time.Time
+	OpenDuration    time.Duration
+	State           string // "CLOSED", "OPEN", "HALF-OPEN"
 }
 
 type BankOneClient struct {
@@ -62,7 +62,7 @@ func (s *server) CreateAccountQuick(ctx context.Context, req *pb.CreateAccountQu
 
 func (s *server) GetBalance(ctx context.Context, req *pb.BalanceRequest) (*pb.BalanceResponse, error) {
 	path := fmt.Sprintf("/Account/GetAccountByAccountNumber/2?authtoken=%s&accountNumber=%s", s.client.AuthToken, req.AccountNumber)
-	
+
 	resp, err := s.client.get(path)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (s *server) SetPND(ctx context.Context, req *pb.PNDRequest) (*pb.BankOneRes
 	} else {
 		path = "/Account/DeactivatePND"
 	}
-	
+
 	body := map[string]interface{}{
 		"AccountNo":          req.AccountNumber,
 		"AuthenticationCode": s.client.AuthToken,
@@ -107,10 +107,10 @@ func (c *BankOneClient) post(path string, body interface{}) (*pb.BankOneResponse
 
 	url := c.BaseURL + path
 	jsonBody, _ := json.Marshal(body)
-	
+
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		c.recordFailure()
@@ -215,14 +215,14 @@ func (s *server) GetBVNDetails(ctx context.Context, req *pb.BVNRequest) (*pb.Ban
 func (s *server) InterbankTransfer(ctx context.Context, req *pb.InterbankTransferRequest) (*pb.BankOneResponse, error) {
 	path := "/Account/InterBankTransfer"
 	body := map[string]interface{}{
-		"Amount":                 req.Amount,
-		"SourceAccountNumber":    req.SourceAccount,
+		"Amount":                   req.Amount,
+		"SourceAccountNumber":      req.SourceAccount,
 		"DestinationAccountNumber": req.DestinationAccount,
-		"DestinationBankCode":    req.DestinationBankCode,
-		"DestinationAccountName": req.DestinationAccountName,
-		"Narration":              req.Narration,
-		"TransactionReference":   req.Reference,
-		"Token":                  s.client.AuthToken,
+		"DestinationBankCode":      req.DestinationBankCode,
+		"DestinationAccountName":   req.DestinationAccountName,
+		"Narration":                req.Narration,
+		"TransactionReference":     req.Reference,
+		"Token":                    s.client.AuthToken,
 	}
 	return s.client.post(path, body)
 }

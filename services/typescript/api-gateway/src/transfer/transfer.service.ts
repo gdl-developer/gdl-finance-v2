@@ -38,6 +38,9 @@ export class TransferService implements OnModuleInit {
   }
 
   accountEnquiry(bankCode: string, accountNumber: string) {
-    return this.transactionService.accountEnquiry({ bank_code: bankCode, account_number: accountNumber });
+    return this.transactionService.accountEnquiry({
+      bank_code: bankCode,
+      account_number: accountNumber,
+    });
   }
 }

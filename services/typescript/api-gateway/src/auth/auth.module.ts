@@ -5,7 +5,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { KycController } from './kyc.controller';
-import { SecurityQuestionsConfigController, UserSecurityQuestionsController } from './security-questions.controller';
+import {
+  SecurityQuestionsConfigController,
+  UserSecurityQuestionsController,
+} from './security-questions.controller';
 import { UserController } from './user.controller';
 
 @Module({
@@ -28,15 +31,13 @@ import { UserController } from './user.controller';
     }),
   ],
   controllers: [
-    AuthController, 
-    KycController, 
-    SecurityQuestionsConfigController, 
+    AuthController,
+    KycController,
+    SecurityQuestionsConfigController,
     UserSecurityQuestionsController,
     UserController,
   ],
-  providers: [
-    AuthService, 
-  ],
+  providers: [AuthService],
   exports: [AuthService],
 })
 export class AuthModule {}

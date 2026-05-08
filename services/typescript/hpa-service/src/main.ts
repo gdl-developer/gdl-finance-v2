@@ -14,4 +14,7 @@ async function bootstrap() {
   await app.listen(3086, '0.0.0.0');
   console.log(`HPA Service is running on: ${await app.getUrl()}`);
 }
-bootstrap().catch(err => { console.error(err); process.exit(1); });
+bootstrap().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

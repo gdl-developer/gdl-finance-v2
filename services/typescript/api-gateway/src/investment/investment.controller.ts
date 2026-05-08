@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { InvestmentService } from './investment.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { AuthenticatedRequest } from '../auth/interfaces/request.interface';

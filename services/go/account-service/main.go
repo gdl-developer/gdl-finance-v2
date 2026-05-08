@@ -23,10 +23,10 @@ import (
 )
 
 type Account struct {
-	ID            uint   `gorm:"primaryKey"`
-	UserID        string `gorm:"uniqueIndex;not null"`
-	Status        string `gorm:"default:'ACTIVE'"`
-	Currency      string `gorm:"default:'NGN'"`
+	ID       uint   `gorm:"primaryKey"`
+	UserID   string `gorm:"uniqueIndex;not null"`
+	Status   string `gorm:"default:'ACTIVE'"`
+	Currency string `gorm:"default:'NGN'"`
 
 	// Core BankOne Account
 	BankOneAccount string  `json:"bankone_account"`
@@ -142,10 +142,10 @@ func (s *server) InitializeCBAAccounts(ctx context.Context, req *pb.InitializeCB
 
 	// 2. Save to Shadow Ledger
 	newAccount := Account{
-		UserID:         req.UserId,
-		BankOneAccount: nuban,
-		BankOneBalance: 0.0,
-		UBALedgerAccount: "UBA-VIRT-" + req.UserId, 
+		UserID:           req.UserId,
+		BankOneAccount:   nuban,
+		BankOneBalance:   0.0,
+		UBALedgerAccount: "UBA-VIRT-" + req.UserId,
 		RMBAccount:       "RMB-VIRT-" + req.UserId,
 		Currency:         "NGN",
 		Status:           "ACTIVE",
@@ -162,7 +162,7 @@ func (s *server) InitializeCBAAccounts(ctx context.Context, req *pb.InitializeCB
 func main() {
 	godotenv.Load()
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require",
-		os.Getenv("DB_HOST"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), 
+		os.Getenv("DB_HOST"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"), os.Getenv("DB_PORT"))
 
 	db, _ := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -174,15 +174,15 @@ func main() {
 
 	lis, _ := net.Listen("tcp", ":50051")
 	s := grpc.NewServer()
-	
+
 	// Register services
 	pb.RegisterAccountServiceServer(s, &server{db: db, clients: clients, redis: rdb})
-	
+
 	// Register Health Service
 	healthServer := health.NewServer()
 	healthpb.RegisterHealthServer(s, healthServer)
 	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
-	
+
 	reflection.Register(s)
 	s.Serve(lis)
 }

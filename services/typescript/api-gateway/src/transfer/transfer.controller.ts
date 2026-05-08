@@ -36,6 +36,9 @@ export class TransferController {
 
   @Post('enquiry')
   enquiry(@Body() body: any) {
-    return this.transferService.accountEnquiry(body.bank_code, body.account_number);
+    return this.transferService.accountEnquiry(
+      body.bank_code,
+      body.account_number,
+    );
   }
 }

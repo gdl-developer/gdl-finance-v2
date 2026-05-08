@@ -8,15 +8,15 @@ import (
 	"os"
 	"time"
 
-	pb "github.com/gdl/transaction-service/proto"
-	identity_pb "github.com/gdl/identity-service/proto"
 	account_pb "github.com/gdl/account-service/proto"
 	bankone_pb "github.com/gdl/bankone-connector/proto"
+	identity_pb "github.com/gdl/identity-service/proto"
+	pb "github.com/gdl/transaction-service/proto"
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type server struct {
@@ -55,12 +55,12 @@ func (s *server) TransferBank(ctx context.Context, req *pb.BankTransferRequest) 
 	}
 
 	bankoneResp, err := s.bankone.InterbankTransfer(ctx, &bankone_pb.InterbankTransferRequest{
-		Amount:                 fmt.Sprintf("%.2f", req.Amount),
-		SourceAccount:          account.AccountNumber,
-		DestinationAccount:     req.AccountNumber,
-		DestinationBankCode:    req.BankCode,
-		Narration:              req.Narration,
-		Reference:              fmt.Sprintf("TRF-%d", time.Now().UnixNano()),
+		Amount:              fmt.Sprintf("%.2f", req.Amount),
+		SourceAccount:       account.AccountNumber,
+		DestinationAccount:  req.AccountNumber,
+		DestinationBankCode: req.BankCode,
+		Narration:           req.Narration,
+		Reference:           fmt.Sprintf("TRF-%d", time.Now().UnixNano()),
 	})
 
 	if err != nil || !bankoneResp.Success {
