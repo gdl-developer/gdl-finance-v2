@@ -1,0 +1,6 @@
+{
+  "*.go": "gofmt -w",
+  "*.ts": "prettier --write",
+  "*.js": "prettier --write",
+  "*.json": "prettier --write"
+}

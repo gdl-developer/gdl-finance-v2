@@ -75,9 +75,9 @@ jobs:
           # Check TS services
           elif [ -d "./services/typescript/$SERVICE_NAME" ]; then
             docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging ./services/typescript/$SERVICE_NAME
-          # Check root User-Service (mapped as user-service in build script)
+          # Check root User-Service (now moved inside the repo)
           elif [ "$SERVICE_NAME" == "user-service" ]; then
-            docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/user-service:staging ../User-Service
+            docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/user-service:staging ./services/typescript/user-service
           fi
           
           docker push registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging

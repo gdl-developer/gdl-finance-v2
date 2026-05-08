@@ -28,7 +28,7 @@ TS_SERVICES=(
   "investment-service:./services/typescript/investment-service"
   "loan-service:./services/typescript/loan-service"
   "saveinvest-service:./services/typescript/saveinvest-service"
-  "user-service:../User-Service"
+  "user-service:./services/typescript/user-service"
 )
 
 echo "Starting build process at $(date)" | tee $LOG_FILE
