@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { randomUUID } from 'crypto';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -28,8 +29,7 @@ async function bootstrap() {
     .addHook('onRequest', (request, reply, done) => {
       const correlationId =
         request.headers['x-correlation-id'] ||
-        request.headers['x-request-id'] ||
-        require('crypto').randomUUID();
+        request.headers['x-request-id'] || randomUUID();
 
       request.headers['x-correlation-id'] = correlationId;
       reply.header('x-correlation-id', correlationId);
