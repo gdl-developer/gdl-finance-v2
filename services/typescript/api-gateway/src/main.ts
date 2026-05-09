@@ -7,8 +7,8 @@ import {
 import { AppModule } from './app.module';
 import fastifyCookie from '@fastify/cookie';
 
-// import helmet from '@fastify/helmet';
-// import rateLimit from '@fastify/rate-limit';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 
 import { AllExceptionsFilter } from './common/filters/exception.filter';
 
@@ -21,6 +21,13 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Security Headers
+  await app.register(helmet as any);
+  await app.register(rateLimit as any, {
+    max: 100,
+    timeWindow: '1 minute',
+  });
 
   // Correlation ID Middleware
   app
