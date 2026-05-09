@@ -9,6 +9,7 @@ RUN npm install
 
 # Copy source code
 COPY . .
+RUN touch .env
 
 # Build the application
 RUN npm run build
