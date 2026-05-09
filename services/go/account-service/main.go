@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
 
 	pb "github.com/gdl/account-service/proto"
 	bankone_pb "github.com/gdl/bankone-connector/proto"
