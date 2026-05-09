@@ -2,7 +2,7 @@ name: Deploy GDL V2 Staging
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, test_suit_implementation]
   workflow_dispatch:
 
 jobs:
