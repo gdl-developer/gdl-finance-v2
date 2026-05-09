@@ -5,7 +5,9 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export class AddBranchToFlexiMarketers1740300000000 implements MigrationInterface {
+export class AddBranchToFlexiMarketers1740300000000
+  implements MigrationInterface
+{
   name = 'AddBranchToFlexiMarketers1740300000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

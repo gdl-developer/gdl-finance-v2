@@ -7,8 +7,8 @@ import {
 import { AppModule } from './app.module';
 import fastifyCookie from '@fastify/cookie';
 
-import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
+// import helmet from '@fastify/helmet';
+// import rateLimit from '@fastify/rate-limit';
 
 import { AllExceptionsFilter } from './common/filters/exception.filter';
 
@@ -29,7 +29,8 @@ async function bootstrap() {
     .addHook('onRequest', (request, reply, done) => {
       const correlationId =
         request.headers['x-correlation-id'] ||
-        request.headers['x-request-id'] || randomUUID();
+        request.headers['x-request-id'] ||
+        randomUUID();
 
       request.headers['x-correlation-id'] = correlationId;
       reply.header('x-correlation-id', correlationId);

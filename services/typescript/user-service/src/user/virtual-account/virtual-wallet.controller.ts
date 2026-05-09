@@ -62,8 +62,9 @@ export class VirtualWalletController {
       this.logger.log(
         `Initiating dual virtual account creation for user ID: ${user_id}`,
       );
-      const result =
-        await this.virtualAccountService.createVirtualAccount(user_id);
+      const result = await this.virtualAccountService.createVirtualAccount(
+        user_id,
+      );
 
       return res.status(HttpStatus.CREATED).json({
         success: true,
@@ -101,8 +102,9 @@ export class VirtualWalletController {
     this.logger.log(`Fetching virtual wallets for user ID: ${user_id}`);
 
     try {
-      const wallets =
-        await this.virtualWalletService.getUserVirtualWallets(user_id);
+      const wallets = await this.virtualWalletService.getUserVirtualWallets(
+        user_id,
+      );
 
       this.logger.log(
         `Successfully retrieved ${wallets.length} virtual wallets for user ID: ${user_id}`,

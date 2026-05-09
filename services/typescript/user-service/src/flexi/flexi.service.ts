@@ -166,14 +166,14 @@ export class FlexiService {
 
     let targetUserId: number;
     let agentId: number | null = null;
-    let marketerId: number | null = dto.marketer_id || null;
+    const marketerId: number | null = dto.marketer_id || null;
 
     if (userPayload.user_type === 'FLEXI_AGENT') {
       agentId = userPayload.user_id;
 
       // If agent is creating, they MUST provide client details or specify a client
       if (dto.client_email) {
-        let client = await this.userService.findOne({
+        const client = await this.userService.findOne({
           where: { email: dto.client_email },
         });
 
@@ -186,8 +186,9 @@ export class FlexiService {
 
           // Let's auto-create a minimal user for the purpose of the request
           const tempPassword = Math.random().toString(36).slice(-8);
-          const hashedPassword =
-            await this.userService.hashPassword(tempPassword); // Using public method if available or bcrypt directly
+          const hashedPassword = await this.userService.hashPassword(
+            tempPassword,
+          ); // Using public method if available or bcrypt directly
 
           // Note: accessing repo via service might be restricted.
           // We'll use userService.create if possible, but AbstractService create usually takes DTO.
@@ -806,10 +807,10 @@ export class FlexiService {
             ? FlexiRequestStatus.FUNDS_DISBURSED
             : FlexiRequestStatus.APPROVED
           : dto.status === 'REJECTED'
-            ? FlexiRequestStatus.REJECTED
-            : dto.status === 'FUNDS_DISBURSED'
-              ? FlexiRequestStatus.FUNDS_DISBURSED
-              : (dto.status as FlexiRequestStatus),
+          ? FlexiRequestStatus.REJECTED
+          : dto.status === 'FUNDS_DISBURSED'
+          ? FlexiRequestStatus.FUNDS_DISBURSED
+          : (dto.status as FlexiRequestStatus),
       comment:
         dto.rejection_reason ||
         (dto.status === 'APPROVED'
@@ -817,8 +818,8 @@ export class FlexiService {
             ? 'Approved & Disbursed'
             : 'Approved'
           : dto.status === 'FUNDS_DISBURSED'
-            ? 'Funds Disbursed'
-            : 'Rejected'),
+          ? 'Funds Disbursed'
+          : 'Rejected'),
     });
 
     await this.approvalHistoryRepo.save(history);
@@ -996,6 +997,7 @@ export class FlexiService {
         );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(dto.password, 12);
 
@@ -1197,6 +1199,7 @@ export class FlexiService {
     if (!agent) throw new NotFoundException('Invalid credentials');
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const bcrypt = require('bcryptjs');
     const isMatch = await bcrypt.compare(dto.password, agent.password);
 
@@ -1269,6 +1272,7 @@ export class FlexiService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
 
@@ -1332,6 +1336,7 @@ export class FlexiService {
 
     // Verify Old Password
     // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const bcrypt = require('bcryptjs');
     const isMatch = await bcrypt.compare(dto.oldPassword, agent.password);
     if (!isMatch) throw new BadRequestException('Incorrect old password');
@@ -1344,7 +1349,7 @@ export class FlexiService {
     return { success: true, message: 'Password changed successfully' };
   }
 
-  async getLoginHistory(agentId: number, page: number = 1, limit: number = 10) {
+  async getLoginHistory(agentId: number, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
     const [data, total] = await this.loginHistoryRepo.findAndCount({
       where: { agent: { id: agentId } },
@@ -1749,8 +1754,8 @@ export class FlexiService {
 
     const marketerBranchId = request.marketer?.office_branch?.id;
 
-    let steps = [...request.workflow.steps].sort((a, b) => a.level - b.level);
-    let maxLevel = Math.max(...steps.map((s) => s.level));
+    const steps = [...request.workflow.steps].sort((a, b) => a.level - b.level);
+    const maxLevel = Math.max(...steps.map((s) => s.level));
 
     let currentLevel = request.current_approval_level;
     let currentStep = steps.find((s) => s.level === currentLevel);
@@ -1770,8 +1775,8 @@ export class FlexiService {
           const adminData = initiatorAdminId
             ? { staffId: initiatorAdminId }
             : currentStep.admin
-              ? { staffId: currentStep.admin.staffId }
-              : null;
+            ? { staffId: currentStep.admin.staffId }
+            : null;
           const skipHistory = this.approvalHistoryRepo.create({
             request: request,
             admin: adminData as any,

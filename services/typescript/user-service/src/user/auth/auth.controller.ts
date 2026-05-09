@@ -307,8 +307,9 @@ export class AuthController {
   async confirmForgotPasswordRequest(
     @Body() tokenVerifyActionDto: TokenVerifyActionDto,
   ) {
-    const reset =
-      await this.authService.tokenVerifyAction(tokenVerifyActionDto);
+    const reset = await this.authService.tokenVerifyAction(
+      tokenVerifyActionDto,
+    );
 
     if (!reset) throw new NotImplementedException('Reset Confirmation Failed');
     return { success: true, data: reset };
@@ -316,8 +317,9 @@ export class AuthController {
 
   @Post('/password/new/create')
   async createNewPassword(@Body() createNewPasswordDto: any) {
-    const reset =
-      await this.authService.createNewPassword(createNewPasswordDto);
+    const reset = await this.authService.createNewPassword(
+      createNewPasswordDto,
+    );
 
     if (!reset) throw new NotImplementedException('Reset Confirmation Failed');
     return { success: true, data: reset };
@@ -325,8 +327,9 @@ export class AuthController {
 
   @Post('email/verify/confirm') // for verify email request
   async confirmEmailVerifyAction(@Body() verifyEmailDto: VerifyEmailDto) {
-    const verify =
-      await this.authService.confirmEmailVerifyAction(verifyEmailDto);
+    const verify = await this.authService.confirmEmailVerifyAction(
+      verifyEmailDto,
+    );
 
     if (!verify)
       throw new NotImplementedException('Verify Confirmation Failed');
@@ -368,8 +371,9 @@ export class AuthController {
 
   @Get('validate/phone/exist/:phone_number')
   async validatePhoneExist(@Param('phone_number') phone_number: string) {
-    const phone_exists =
-      await this.authService.validatePhoneExist(phone_number);
+    const phone_exists = await this.authService.validatePhoneExist(
+      phone_number,
+    );
     return { data: phone_exists };
   }
 

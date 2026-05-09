@@ -170,7 +170,9 @@ export class CorsMiddleware implements NestMiddleware {
         );
       } else {
         console.warn(
-          `[CORS][PROD] Blocking non-HTTPS request to ${req.originalUrl} from ${clientIp}. Headers: ${JSON.stringify(req.headers)}`,
+          `[CORS][PROD] Blocking non-HTTPS request to ${
+            req.originalUrl
+          } from ${clientIp}. Headers: ${JSON.stringify(req.headers)}`,
         );
         return this.blockRequest(res, 'Access denied');
       }

@@ -61,7 +61,9 @@ export class AuthController extends BaseController {
   async confirmForgotPasswordRequest(
     @Body() tokenVerifyActionDto: TokenVerifyActionDto,
   ) {
-    const reset = await this.authService.tokenVerifyAction(tokenVerifyActionDto);
+    const reset = await this.authService.tokenVerifyAction(
+      tokenVerifyActionDto,
+    );
 
     if (!reset) throw new NotImplementedException('Reset Confirmation Failed');
     return { success: true, data: reset };
@@ -70,7 +72,9 @@ export class AuthController extends BaseController {
   @Post('/password/new/create')
   async createNewPassword(@Body() createNewPasswordDto: any) {
     console.log('createNewPasswordDto', createNewPasswordDto);
-    const reset = await this.authService.createNewPassword(createNewPasswordDto);
+    const reset = await this.authService.createNewPassword(
+      createNewPasswordDto,
+    );
 
     if (!reset) throw new NotImplementedException('Reset Confirmation Failed');
     return { success: true, data: reset };

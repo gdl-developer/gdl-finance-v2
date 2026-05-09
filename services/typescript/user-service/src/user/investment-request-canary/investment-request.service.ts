@@ -881,7 +881,9 @@ export class CanaryInvestmentRequestService {
       }
 
       this.logger.log(
-        `Infoware fund-account response for Canary investment ${request?.id}: ${JSON.stringify(fundAccountResponse)}`,
+        `Infoware fund-account response for Canary investment ${
+          request?.id
+        }: ${JSON.stringify(fundAccountResponse)}`,
       );
     } catch (fundError) {
       this.logger.error(
@@ -1423,8 +1425,9 @@ export class CanaryInvestmentRequestService {
         );
 
       // Step 4: Validate user has sufficient investment balance
-      const activeInvestment =
-        await this.getUserTotalActiveInvestmentAmount(userId);
+      const activeInvestment = await this.getUserTotalActiveInvestmentAmount(
+        userId,
+      );
 
       if (
         activeInvestment.status !== 'ACTIVE' ||

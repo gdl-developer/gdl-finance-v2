@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class FixMissingSchemaColumns1771260000000 implements MigrationInterface {
+export class FixMissingSchemaColumns1771260000000
+  implements MigrationInterface
+{
   name = 'FixMissingSchemaColumns1771260000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -230,8 +230,9 @@ export class InvestmentRequestController {
     this.logger.log(`Fetching fund accounts for user ID: ${user_id}`);
 
     try {
-      const result =
-        await this.investmentRequestService.getUserFundAccounts(user_id);
+      const result = await this.investmentRequestService.getUserFundAccounts(
+        user_id,
+      );
 
       return res.status(200).json({
         success: true,

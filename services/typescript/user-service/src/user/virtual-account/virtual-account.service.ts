@@ -144,7 +144,11 @@ export class VirtualAccountService {
             `[UBA_RAW] Full response: ${JSON.stringify(ubaResponse, null, 2)}`,
           );
           this.logger.log(
-            `[UBA_RAW] data keys: ${ubaResponse?.data ? Object.keys(ubaResponse.data).join(', ') : 'no data field'}`,
+            `[UBA_RAW] data keys: ${
+              ubaResponse?.data
+                ? Object.keys(ubaResponse.data).join(', ')
+                : 'no data field'
+            }`,
           );
 
           // Extract account number — UBA uses vNUBAN nested in provider_response
@@ -175,7 +179,9 @@ export class VirtualAccountService {
             );
           } else {
             this.logger.warn(
-              `[VirtualAccount] UBA response received but no account number found. success=${ubaResponse?.success}, data=${JSON.stringify(ubaData)}`,
+              `[VirtualAccount] UBA response received but no account number found. success=${
+                ubaResponse?.success
+              }, data=${JSON.stringify(ubaData)}`,
             );
           }
         } catch (ubaError) {

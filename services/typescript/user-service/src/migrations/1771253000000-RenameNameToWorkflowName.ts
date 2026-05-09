@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class RenameNameToWorkflowName1771253000000 implements MigrationInterface {
+export class RenameNameToWorkflowName1771253000000
+  implements MigrationInterface
+{
   name = 'RenameNameToWorkflowName1771253000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

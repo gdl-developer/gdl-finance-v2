@@ -638,8 +638,9 @@ export class CbaInteractionsService extends AbstractService {
   }
 
   async checkUserNubanRecords(user_id: number) {
-    const user_nuban =
-      await this.nubanAccountsService.fetchUserNubanDetails(user_id);
+    const user_nuban = await this.nubanAccountsService.fetchUserNubanDetails(
+      user_id,
+    );
 
     return user_nuban;
   }

@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddExtensionFieldsToFlexiRequestManual1772534460932 implements MigrationInterface {
+export class AddExtensionFieldsToFlexiRequestManual1772534460932
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     if (!(await queryRunner.hasColumn('flexi_requests', 'extension_tenure'))) {
       await queryRunner.query(

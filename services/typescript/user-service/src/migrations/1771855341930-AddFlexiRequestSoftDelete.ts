@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddFlexiRequestSoftDelete1771855341930 implements MigrationInterface {
+export class AddFlexiRequestSoftDelete1771855341930
+  implements MigrationInterface
+{
   name = 'AddFlexiRequestSoftDelete1771855341930';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddExpiryDateAndDisbursedAtToFlexiRequest1771262000000 implements MigrationInterface {
+export class AddExpiryDateAndDisbursedAtToFlexiRequest1771262000000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Add disbursed_at column if it doesn't already exist
     const hasDisbursedAt = await queryRunner.hasColumn(
