@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddBranchRestrictionFlagToWorkflowStep1740304000000 implements MigrationInterface {
+export class AddBranchRestrictionFlagToWorkflowStep1740304000000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     const hasColumn = await queryRunner.hasColumn(
       'approval_workflow_step',

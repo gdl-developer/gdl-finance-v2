@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateFlexiAgentLoginHistoryTable1770384500000 implements MigrationInterface {
+export class CreateFlexiAgentLoginHistoryTable1770384500000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS \`flexi_agent_login_history\` (

@@ -89,7 +89,9 @@ export class QuoreIdService {
         errorMessage.toLowerCase().includes('insufficient wallet balance')
       ) {
         this.logger.warn(
-          `Bypassing QuoreID failure (Insufficient Balance) in ${this.envService.read().NODE_ENV} mode.`,
+          `Bypassing QuoreID failure (Insufficient Balance) in ${
+            this.envService.read().NODE_ENV
+          } mode.`,
         );
         return {
           status: {

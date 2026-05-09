@@ -16,7 +16,7 @@ async function bootstrap() {
   );
 
   // Security Headers
-  await app.register(helmet);
+  await app.register(helmet as any);
 
   app.setGlobalPrefix('dms-service');
   await app.listen(3085, '0.0.0.0');

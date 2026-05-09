@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class ExpandCallbackUrlLength1772621000000 implements MigrationInterface {
+export class ExpandCallbackUrlLength1772621000000
+  implements MigrationInterface
+{
   name = 'ExpandCallbackUrlLength1772621000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

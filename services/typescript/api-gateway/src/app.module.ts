@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { HealthController } from './health/health.controller';
 import { AccountModule } from './account/account.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { FlexiModule } from './flexi/flexi.module';

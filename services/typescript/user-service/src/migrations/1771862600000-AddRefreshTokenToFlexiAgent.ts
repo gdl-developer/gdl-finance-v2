@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddRefreshTokenToFlexiAgent1771862600000 implements MigrationInterface {
+export class AddRefreshTokenToFlexiAgent1771862600000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     const hasTokenColumn = await queryRunner.hasColumn(
       'flexi_agents',

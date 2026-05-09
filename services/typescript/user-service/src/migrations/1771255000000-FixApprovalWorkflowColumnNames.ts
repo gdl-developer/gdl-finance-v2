@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class FixApprovalWorkflowColumnNames1771255000000 implements MigrationInterface {
+export class FixApprovalWorkflowColumnNames1771255000000
+  implements MigrationInterface
+{
   name = 'FixApprovalWorkflowColumnNames1771255000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

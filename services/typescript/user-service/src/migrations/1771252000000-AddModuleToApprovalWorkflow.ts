@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddModuleToApprovalWorkflow1771252000000 implements MigrationInterface {
+export class AddModuleToApprovalWorkflow1771252000000
+  implements MigrationInterface
+{
   name = 'AddModuleToApprovalWorkflow1771252000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

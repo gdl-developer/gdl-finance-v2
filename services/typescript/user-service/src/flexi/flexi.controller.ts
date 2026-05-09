@@ -64,8 +64,8 @@ export class FlexiController {
   @ApiOperation({ summary: 'Get all requests for the logged-in user' })
   async getUserRequests(
     @Req() req: Request,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
     @Query('search') search?: string,
     @Query('status') status?: string,
   ) {
@@ -85,8 +85,8 @@ export class FlexiController {
   })
   async getPendingRequests(
     @Req() req: Request,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
     @Query('search') search?: string,
   ) {
     try {
@@ -303,8 +303,8 @@ export class FlexiController {
   @ApiOperation({ summary: 'Get Agent Login History' })
   async getLoginHistory(
     @Req() req: Request,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
   ) {
     const user: any = req['user'];
     // Ensure user is an agent (RBAC check or guard context)

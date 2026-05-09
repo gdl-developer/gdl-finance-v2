@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install --legacy-peer-deps
 COPY . .
+RUN touch .env
 RUN npm run build
 
 # Stage 2: Production

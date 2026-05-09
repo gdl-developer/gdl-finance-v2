@@ -76,7 +76,7 @@ export class ReportingService {
     return last_week;
   }
 
-  async dashboardStats(isSuperAdmin: boolean = true) {
+  async dashboardStats(isSuperAdmin = true) {
     const getStats = async (service: any) => {
       const stats = await service.investmentRequestRepository
         .createQueryBuilder('request')

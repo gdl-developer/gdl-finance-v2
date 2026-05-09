@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { randomUUID } from 'crypto';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -21,6 +22,13 @@ async function bootstrap() {
 
   app.useGlobalFilters(new AllExceptionsFilter());
 
+  // Security Headers
+  await app.register(helmet as any);
+  await app.register(rateLimit as any, {
+    max: 100,
+    timeWindow: '1 minute',
+  });
+
   // Correlation ID Middleware
   app
     .getHttpAdapter()
@@ -29,7 +37,7 @@ async function bootstrap() {
       const correlationId =
         request.headers['x-correlation-id'] ||
         request.headers['x-request-id'] ||
-        require('crypto').randomUUID();
+        randomUUID();
 
       request.headers['x-correlation-id'] = correlationId;
       reply.header('x-correlation-id', correlationId);
