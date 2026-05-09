@@ -234,7 +234,6 @@ func (s *server) SetPIN(ctx context.Context, req *pb.SetPINRequest) (*pb.SetPINR
 	return &pb.SetPINResponse{Success: true, Message: "PIN updated successfully"}, nil
 }
 
-
 func (s *server) VerifyPIN(ctx context.Context, req *pb.VerifyPINRequest) (*pb.VerifyPINResponse, error) {
 	var user User
 	if err := s.db.First(&user, req.UserId).Error; err != nil {
@@ -311,7 +310,7 @@ func (s *server) SetUserSecurityQuestions(ctx context.Context, req *pb.SetUserQu
 	for _, ans := range req.Answers {
 		// Better Security: Hash the answer
 		hashedAnswer, _ := bcrypt.GenerateFromPassword([]byte(ans.Answer), bcrypt.DefaultCost)
-		
+
 		userQuestion := UserSecurityQuestion{
 			UserID:     uint(uint64(parseUint(req.UserId))),
 			QuestionID: uint(ans.QuestionId),
@@ -406,11 +405,16 @@ func (s *server) DeleteBusinessUnit(ctx context.Context, req *pb.DeleteBusinessU
 func main() {
 	godotenv.Load()
 
-	dbHost := os.Getenv("DB_HOST"); _ = dbHost
-	dbPort := os.Getenv("DB_PORT"); _ = dbPort
-	dbUser := os.Getenv("DB_USERNAME"); _ = dbUser
-	dbPass := os.Getenv("DB_PASSWORD"); _ = dbPass
-	dbName := os.Getenv("DB_NAME"); _ = dbName
+	dbHost := os.Getenv("DB_HOST")
+	_ = dbHost
+	dbPort := os.Getenv("DB_PORT")
+	_ = dbPort
+	dbUser := os.Getenv("DB_USERNAME")
+	_ = dbUser
+	dbPass := os.Getenv("DB_PASSWORD")
+	_ = dbPass
+	dbName := os.Getenv("DB_NAME")
+	_ = dbName
 
 	db, err := gorm.Open(sqlite.Open("identity.db"), &gorm.Config{})
 	if err != nil {

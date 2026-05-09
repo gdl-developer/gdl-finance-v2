@@ -20,17 +20,21 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new AllExceptionsFilter());
-  
+
   // Correlation ID Middleware
-  app.getHttpAdapter().getInstance().addHook('onRequest', (request, reply, done) => {
-    const correlationId = request.headers['x-correlation-id'] || 
-                         request.headers['x-request-id'] || 
-                         require('crypto').randomUUID();
-    
-    request.headers['x-correlation-id'] = correlationId;
-    reply.header('x-correlation-id', correlationId);
-    done();
-  });
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .addHook('onRequest', (request, reply, done) => {
+      const correlationId =
+        request.headers['x-correlation-id'] ||
+        request.headers['x-request-id'] ||
+        require('crypto').randomUUID();
+
+      request.headers['x-correlation-id'] = correlationId;
+      reply.header('x-correlation-id', correlationId);
+      done();
+    });
 
   // Manual Security Headers
   app

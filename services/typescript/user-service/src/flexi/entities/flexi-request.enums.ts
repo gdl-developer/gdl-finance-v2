@@ -1,0 +1,16 @@
+export enum FlexiRequestStatus {
+  PENDING_DOCS = 'PENDING_DOCS',
+  PENDING_SUBMISSION = 'PENDING_SUBMISSION',
+  PENDING_APPROVAL = 'PENDING_APPROVAL', // Waiting for automated/manual approval
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  FUNDS_DISBURSED = 'FUNDS_DISBURSED',
+  RECALLED = 'RECALLED', // For Manual PoF Recall
+  SKIPPED = 'SKIPPED',
+}
+
+export enum FlexiRequestType {
+  MF_FUNDING = 'MF_FUNDING',
+  POF_RECALL = 'POF_RECALL',
+  GENERAL_REQUEST = 'GENERAL_REQUEST',
+}

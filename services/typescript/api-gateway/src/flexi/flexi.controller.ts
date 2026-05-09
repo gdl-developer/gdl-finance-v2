@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, Req, Param, Patch, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Req,
+  Param,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { FlexiService } from './flexi.service';
 import { FastifyRequest } from 'fastify';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -9,7 +18,12 @@ export class FlexiController {
 
   @Post('agent/login')
   agentLogin(@Body() dto: any, @Req() req: FastifyRequest) {
-    return this.flexiService.proxyRequest('post', '/agent/login', dto, req.headers);
+    return this.flexiService.proxyRequest(
+      'post',
+      '/agent/login',
+      dto,
+      req.headers,
+    );
   }
 
   @UseGuards(AuthGuard)

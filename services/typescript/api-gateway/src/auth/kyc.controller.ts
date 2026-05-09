@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, UseGuards, Req, Param, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  Param,
+  Patch,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { AuthenticatedRequest } from './interfaces/request.interface';
@@ -14,7 +23,10 @@ export class KycController {
   }
 
   @Patch(':id')
-  upgradeKyc(@Req() req: AuthenticatedRequest, @Body('target_level') level: number) {
+  upgradeKyc(
+    @Req() req: AuthenticatedRequest,
+    @Body('target_level') level: number,
+  ) {
     return this.authService.upgradeKyc(req.user.user_id, level);
   }
 }

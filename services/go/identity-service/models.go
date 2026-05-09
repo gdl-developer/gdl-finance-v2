@@ -20,10 +20,10 @@ type KYCLevel struct {
 // UserSecurityQuestion stores a user's specific answers to security challenges.
 // OWASP: Answers are hashed before storage.
 type UserSecurityQuestion struct {
-	ID         uint      `gorm:"primaryKey"`
-	UserID     uint      `gorm:"index"`
-	QuestionID uint      `json:"question_id"`
-	AnswerHash string    `json:"-"`
+	ID         uint   `gorm:"primaryKey"`
+	UserID     uint   `gorm:"index"`
+	QuestionID uint   `json:"question_id"`
+	AnswerHash string `json:"-"`
 	CreatedAt  time.Time
 }
 

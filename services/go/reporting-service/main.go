@@ -72,7 +72,7 @@ func (s *server) GetDashboardStats(ctx context.Context, req *pb.DashboardRequest
 
 func (s *server) GetUserGrowth(ctx context.Context, req *pb.UserGrowthRequest) (*pb.UserGrowthResponse, error) {
 	var points []*pb.GrowthPoint
-	
+
 	// Optimized SQL to get growth by date
 	s.db.Raw(`
 		SELECT TO_CHAR(created_at, 'YYYY-MM-DD') as date, COUNT(*) as count 
@@ -93,7 +93,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
-	
+
 	db.AutoMigrate(&ReconciliationException{})
 	go startReconciliationWorker(db)
 
