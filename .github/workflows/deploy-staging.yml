@@ -36,6 +36,8 @@ jobs:
           for dir in services/typescript/*/; do
             if [ -f "$dir/package.json" ]; then
               echo "Testing TS service in $dir"
+              # Create dummy .env for tests if needed
+              touch "$dir/.env"
               cd $dir && npm install --legacy-peer-deps && npm test || echo "No tests found" && cd -
             fi
           done
@@ -107,7 +109,7 @@ jobs:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Log in to DOCR
-        run: doctl registry login --expiry-seconds 1200
+        run: doctl registry login
 
       - name: Build and Push Service
         run: |
