@@ -51,10 +51,10 @@ jobs:
           key: ${{ secrets.DROPLET_SSH_KEY }}
           script: |
             # 1. Enter the project directory
-            if [ ! -d "GDL-Fintech-V2" ]; then
-              git clone https://github.com/${{ github.repository }} GDL-Fintech-V2
+            if [ ! -d "gdl-finance-v2" ]; then
+              git clone https://github.com/${{ github.repository }} gdl-finance-v2
             fi
-            cd GDL-Fintech-V2
+            cd gdl-finance-v2
             
             # 2. Update the code
             git pull origin main
