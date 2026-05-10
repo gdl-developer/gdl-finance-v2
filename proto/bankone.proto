@@ -14,19 +14,32 @@ service BankOneService {
   rpc SetLien (LienRequest) returns (BankOneResponse);
   rpc GetBVNDetails (BVNRequest) returns (BankOneResponse);
   rpc InterbankTransfer (InterbankTransferRequest) returns (BankOneResponse);
+  rpc TransactionStatusQuery (TSQRequest) returns (BankOneResponse);
   rpc GetOtherBankList (Empty) returns (BankOneResponse);
 }
 
 message Empty {}
 
 message InterbankTransferRequest {
-  string amount = 1;
-  string source_account = 2;
-  string destination_account = 3;
-  string destination_bank_code = 4;
-  string destination_account_name = 5;
-  string narration = 6;
-  string reference = 7;
+  string amount = 1; // in Naira, will be converted to Kobo in connector
+  string payer_account_number = 2;
+  string payer_name = 3;
+  string receiver_bank_code = 4;
+  string receiver_account_number = 5;
+  string receiver_name = 6;
+  string receiver_phone_number = 7;
+  string receiver_account_type = 8;
+  string receiver_kyc = 9;
+  string receiver_bvn = 10;
+  string narration = 11;
+  string reference = 12;
+}
+
+message TSQRequest {
+  string retrieval_reference = 1;
+  string transaction_date = 2; // YYYY-MM-DD
+  string transaction_type = 3;
+  string amount = 4; // in Naira
 }
 
 message CreateAccountQuickRequest {

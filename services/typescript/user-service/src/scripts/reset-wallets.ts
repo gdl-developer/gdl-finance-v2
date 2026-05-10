@@ -2,6 +2,7 @@ import { createConnection } from 'typeorm';
 import * as path from 'path';
 
 // Load config dynamically to avoid import issues
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const config = require('../../ormconfig');
 
 async function reset() {

@@ -1696,8 +1696,9 @@ export class InvestmentRequestService {
       const totalPendingRedemptions = Number(totalPendingRedemptionsRaw) || 0;
 
       // Fetch user's total active investment
-      const activeInvestment =
-        await this.getUserTotalActiveInvestmentAmount(userId);
+      const activeInvestment = await this.getUserTotalActiveInvestmentAmount(
+        userId,
+      );
       const currentBalance =
         activeInvestment?.investment?.market_value &&
         !isNaN(Number(activeInvestment.investment.market_value))
@@ -2071,7 +2072,9 @@ export class InvestmentRequestService {
       const skip = (page - 1) * limit;
 
       this.logger.log(
-        `Admin retrieved ${JSON.stringify(queryParams)} fund redemption records.`,
+        `Admin retrieved ${JSON.stringify(
+          queryParams,
+        )} fund redemption records.`,
       );
 
       const cleanedSearch = search

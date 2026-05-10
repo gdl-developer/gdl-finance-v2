@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class MakeAgentFieldsNullable1738679000000 implements MigrationInterface {
+export class MakeAgentFieldsNullable1738679000000
+  implements MigrationInterface
+{
   name = 'MakeAgentFieldsNullable1738679000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

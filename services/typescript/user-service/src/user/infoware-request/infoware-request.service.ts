@@ -69,7 +69,10 @@ export class InfowareService implements OnModuleInit, OnModuleDestroy {
       );
       this.logger.error(`Status: ${status}`);
       this.logger.error(
-        `Response (truncated): ${JSON.stringify(rawResponse || {}).slice(0, 1000)}`,
+        `Response (truncated): ${JSON.stringify(rawResponse || {}).slice(
+          0,
+          1000,
+        )}`,
       );
 
       throw new HttpException(

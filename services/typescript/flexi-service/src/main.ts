@@ -20,7 +20,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v2/flexi');
 
   // Security Headers
-  await app.register(helmet);
+  await app.register(helmet as any);
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -16,10 +16,9 @@ export class UserSecurityQuestionsController {
   @Post()
   @AuditLogger('CreateUserSecurityQuestion')
   async create(@Body() createSecurityQueDto: CreateUserSecurityQuestionDto) {
-    const que =
-      await this.userSecQuesService.createSecurityQuestion(
-        createSecurityQueDto,
-      );
+    const que = await this.userSecQuesService.createSecurityQuestion(
+      createSecurityQueDto,
+    );
     return { success: true, data: que };
   }
 

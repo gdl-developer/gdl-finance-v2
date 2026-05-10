@@ -10,6 +10,7 @@ service TransactionService {
   rpc GetTransactionHistory (HistoryRequest) returns (HistoryResponse) {}
   rpc GetBankList (Empty) returns (BankListResponse) {}
   rpc AccountEnquiry (EnquiryRequest) returns (EnquiryResponse) {}
+  rpc TransactionStatusQuery (TSQRequest) returns (TransferResponse) {}
 }
 
 message Empty {}
@@ -49,6 +50,17 @@ message BankTransferRequest {
   double amount = 4;
   string pin = 5;
   string narration = 6;
+  string receiver_name = 7;
+  string receiver_phone = 8;
+  string receiver_account_type = 9;
+  string receiver_kyc = 10;
+  string receiver_bvn = 11;
+}
+
+message TSQRequest {
+  string reference = 1;
+  string date = 2; // YYYY-MM-DD
+  double amount = 3;
 }
 
 message TransferResponse {

@@ -21,8 +21,8 @@ export class AuditLoggerService extends AbstractService {
   }
 
   async getAuditLogs(
-    page: number = 1,
-    per_page: number = 20,
+    page = 1,
+    per_page = 20,
     query?: any,
   ): Promise<paginatedResult> {
     const { search, startDate, endDate, ...other_query } = query || {};

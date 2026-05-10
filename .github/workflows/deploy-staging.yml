@@ -2,7 +2,7 @@ name: Deploy GDL V2 Staging
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, test_suit_implementation]
   workflow_dispatch:
 
 jobs:
@@ -36,12 +36,45 @@ jobs:
           for dir in services/typescript/*/; do
             if [ -f "$dir/package.json" ]; then
               echo "Testing TS service in $dir"
+              # Create dummy .env for tests if needed
+              touch "$dir/.env"
               cd $dir && npm install --legacy-peer-deps && npm test || echo "No tests found" && cd -
             fi
           done
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint Go
+        run: |
+          for dir in services/go/*/; do
+            if [ -f "$dir/go.mod" ]; then
+              echo "Linting Go service in $dir"
+              cd $dir && go vet ./... && cd -
+            fi
+          done
+
+      - name: Lint TypeScript
+        run: npx eslint "services/typescript/**/*.ts" --max-warnings 0
+
   build_and_push:
-    needs: test
+    needs: [test, lint]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -76,7 +109,7 @@ jobs:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Log in to DOCR
-        run: doctl registry login --expiry-seconds 1200
+        run: doctl registry login
 
       - name: Build and Push Service
         run: |

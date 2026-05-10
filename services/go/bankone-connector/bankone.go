@@ -213,21 +213,49 @@ func (s *server) GetBVNDetails(ctx context.Context, req *pb.BVNRequest) (*pb.Ban
 }
 
 func (s *server) InterbankTransfer(ctx context.Context, req *pb.InterbankTransferRequest) (*pb.BankOneResponse, error) {
-	path := "/Account/InterBankTransfer"
+	path := "/Transfer/InterbankTransfer"
+
+	// Convert Naira string to Kobo (multiply by 100)
+	var amountFloat float64
+	fmt.Sscanf(req.Amount, "%f", &amountFloat)
+	amountInKobo := int64(amountFloat * 100)
+
 	body := map[string]interface{}{
-		"Amount":                   req.Amount,
-		"SourceAccountNumber":      req.SourceAccount,
-		"DestinationAccountNumber": req.DestinationAccount,
-		"DestinationBankCode":      req.DestinationBankCode,
-		"DestinationAccountName":   req.DestinationAccountName,
-		"Narration":                req.Narration,
-		"TransactionReference":     req.Reference,
-		"Token":                    s.client.AuthToken,
+		"Amount":                fmt.Sprintf("%d", amountInKobo),
+		"PayerAccountNumber":    req.PayerAccountNumber,
+		"Payer":                 req.PayerName,
+		"RecieversBankCode":     req.ReceiverBankCode,
+		"ReceiverAccountNumber": req.ReceiverAccountNumber,
+		"ReceiverName":          req.ReceiverName,
+		"ReceiverPhoneNumber":   req.ReceiverPhoneNumber,
+		"ReceiverAccountType":   req.ReceiverAccountType,
+		"ReceiverKYC":           req.ReceiverKyc,
+		"ReceiverBVN":           req.ReceiverBvn,
+		"TransactionReference":  req.Reference,
+		"Narration":             req.Narration,
+		"Token":                 s.client.AuthToken,
+	}
+	return s.client.post(path, body)
+}
+
+func (s *server) TransactionStatusQuery(ctx context.Context, req *pb.TSQRequest) (*pb.BankOneResponse, error) {
+	path := "/CoreTransactions/TransactionStatusQuery"
+
+	var amountFloat float64
+	fmt.Sscanf(req.Amount, "%f", &amountFloat)
+	amountInKobo := int64(amountFloat * 100)
+
+	body := map[string]interface{}{
+		"RetrievalReference": req.RetrievalReference,
+		"TransactionDate":    req.TransactionDate,
+		"TransactionType":    req.TransactionType,
+		"Amount":             fmt.Sprintf("%d", amountInKobo),
+		"Token":              s.client.AuthToken,
 	}
 	return s.client.post(path, body)
 }
 
 func (s *server) GetOtherBankList(ctx context.Context, req *pb.Empty) (*pb.BankOneResponse, error) {
-	path := "/Account/GetOtherBankList"
+	path := "/Transfer/GetCommercialBankList"
 	return s.client.get(fmt.Sprintf("%s?authtoken=%s", path, s.client.AuthToken))
 }

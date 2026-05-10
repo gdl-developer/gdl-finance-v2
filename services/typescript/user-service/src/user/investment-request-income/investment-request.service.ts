@@ -251,8 +251,9 @@ export class InvestmentRequestIncomeService {
         status: IncomeInvestmentRequestStatus.PENDING,
       });
 
-      const savedRequest =
-        await this.investmentRequestRepository.save(investmentRequest);
+      const savedRequest = await this.investmentRequestRepository.save(
+        investmentRequest,
+      );
 
       this.logger.log(
         `Investment request stored successfully with ID: ${savedRequest.id}`,
@@ -1339,8 +1340,9 @@ export class InvestmentRequestIncomeService {
       }
 
       // Step 4: Validate user has sufficient investment balance
-      const activeInvestment =
-        await this.getUserTotalActiveInvestmentAmount(userId);
+      const activeInvestment = await this.getUserTotalActiveInvestmentAmount(
+        userId,
+      );
 
       if (
         activeInvestment.status !== 'ACTIVE' ||
@@ -1425,8 +1427,9 @@ export class InvestmentRequestIncomeService {
         status: FundRedemptionIncomeStatus.PROCESSING,
       });
 
-      const responseded =
-        await this.fundRedemptionRepository.save(fundRedemption);
+      const responseded = await this.fundRedemptionRepository.save(
+        fundRedemption,
+      );
       console.log('fundRedemption', responseded);
 
       // ------------------------------------------------------------------

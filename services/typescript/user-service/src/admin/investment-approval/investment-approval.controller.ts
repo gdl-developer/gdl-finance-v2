@@ -108,10 +108,9 @@ export class InvestmentApprovalController {
 
     try {
       if (queryParams.type === 'mmf') {
-        result =
-          await this.investmentRequestService.getAllInvestmentRequests(
-            queryParams,
-          );
+        result = await this.investmentRequestService.getAllInvestmentRequests(
+          queryParams,
+        );
       } else if (queryParams.type === 'canary') {
         result =
           await this.canaryInvestmentRequestService.getAllInvestmentRequests(
@@ -201,10 +200,9 @@ export class InvestmentApprovalController {
 
       // Handle multiple investment types
       if (pendingQueryParams.type === 'mmf') {
-        result =
-          await this.investmentRequestService.getAllRedemptionFund(
-            pendingQueryParams,
-          );
+        result = await this.investmentRequestService.getAllRedemptionFund(
+          pendingQueryParams,
+        );
       } else if (pendingQueryParams.type === 'canary') {
         result =
           await this.canaryInvestmentRequestService.getAllCanaryRedemptionFund(
@@ -279,10 +277,9 @@ export class InvestmentApprovalController {
 
       // Handle multiple investment types
       if (type === 'mmf') {
-        result =
-          await this.investmentRequestService.getRedemptionFundById(
-            pendingQueryParams,
-          );
+        result = await this.investmentRequestService.getRedemptionFundById(
+          pendingQueryParams,
+        );
       } else if (type === 'canary') {
         result =
           await this.canaryInvestmentRequestService.getCanaryRedemptionFundById(
@@ -566,10 +563,10 @@ export class InvestmentApprovalController {
         type === 'mmf'
           ? InvestmentPoolType.MMF
           : type === 'canary'
-            ? InvestmentPoolType.CANARY
-            : type === 'income'
-              ? InvestmentPoolType.INCOME
-              : undefined;
+          ? InvestmentPoolType.CANARY
+          : type === 'income'
+          ? InvestmentPoolType.INCOME
+          : undefined;
 
       if (!poolType) {
         throw new NotFoundException(
@@ -668,10 +665,10 @@ export class InvestmentApprovalController {
         type === 'mmf'
           ? InvestmentPoolType.MMF
           : type === 'canary'
-            ? InvestmentPoolType.CANARY
-            : type === 'income'
-              ? InvestmentPoolType.INCOME
-              : undefined;
+          ? InvestmentPoolType.CANARY
+          : type === 'income'
+          ? InvestmentPoolType.INCOME
+          : undefined;
 
       if (!poolType) {
         throw new NotFoundException(

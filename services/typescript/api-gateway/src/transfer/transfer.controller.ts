@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Req, UseGuards, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  UseGuards,
+  Get,
+  Query,
+  Param,
+} from '@nestjs/common';
 import { TransferService } from './transfer.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { AuthenticatedRequest } from '../auth/interfaces/request.interface';
@@ -39,6 +48,19 @@ export class TransferController {
     return this.transferService.accountEnquiry(
       body.bank_code,
       body.account_number,
+    );
+  }
+
+  @Get('status/:reference')
+  async getStatus(
+    @Param('reference') reference: string,
+    @Query('date') date: string,
+    @Query('amount') amount: string,
+  ) {
+    return this.transferService.transactionStatusQuery(
+      reference,
+      date,
+      parseFloat(amount),
     );
   }
 }

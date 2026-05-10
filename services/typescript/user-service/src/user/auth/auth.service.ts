@@ -937,7 +937,9 @@ export class AuthService extends AbstractService {
     const tokens = await this.signJwt(result, client_ip);
 
     // Send login success notification (don't wait for it)
-    this.sendLoginNotification(client_ip, result, deviceData).catch(() => {});
+    this.sendLoginNotification(client_ip, result, deviceData).catch(() => {
+      this.logger.warn('Failed to send login notification asynchronously');
+    });
 
     return tokens;
   }
@@ -968,7 +970,9 @@ export class AuthService extends AbstractService {
 
     if (!authAction) {
       // Run lazy cleanup to remove any expired OTPs that might be cluttering the DB
-      this.lazyCleanupExpired().catch(() => {});
+      this.lazyCleanupExpired().catch(() => {
+        /* silent failure */
+      });
       throw new NotFoundException('Invalid or expired OTP session');
     }
 
@@ -1001,7 +1005,9 @@ export class AuthService extends AbstractService {
     await this.authActionsRepository.remove(authAction);
 
     // Opportunistic cleanup - runs automatically every 15 minutes
-    this.opportunisticCleanup().catch(() => {}); // Don't wait for cleanup to complete
+    this.opportunisticCleanup().catch(() => {
+      /* silent failure */
+    }); // Don't wait for cleanup to complete
 
     // ✅ Get the user
     const user = await this.userService.findOne({ email });
@@ -1041,7 +1047,9 @@ export class AuthService extends AbstractService {
     const tokens = await this.signJwt(user, client_ip);
 
     // Send login success notification (don't wait for it)
-    this.sendLoginNotification(client_ip, user, deviceData).catch(() => {});
+    this.sendLoginNotification(client_ip, user, deviceData).catch(() => {
+      /* silent failure */
+    });
 
     return tokens;
   }
@@ -1135,7 +1143,9 @@ export class AuthService extends AbstractService {
     const tokens = await this.signJwt(user, client_ip);
 
     // Send login success notification (don't wait for it)
-    this.sendLoginNotification(client_ip, user).catch(() => {});
+    this.sendLoginNotification(client_ip, user).catch(() => {
+      /* silent failure */
+    });
 
     return tokens;
   }
@@ -1555,7 +1565,9 @@ export class AuthService extends AbstractService {
         request_otp: existingAuthAction.request_otp,
       }).catch((err) =>
         console.error(
-          `[Auth] OTP resend notification failed for ${data.request_type} (${data.email || 'N/A'}):`,
+          `[Auth] OTP resend notification failed for ${data.request_type} (${
+            data.email || 'N/A'
+          }):`,
           err?.response?.data || err?.message || err,
         ),
       );
@@ -1614,8 +1626,9 @@ export class AuthService extends AbstractService {
   }
 
   async sendUserNotification(notification_data: any) {
-    const notify_data =
-      await this.userService.sendUserAuthNotifications(notification_data);
+    const notify_data = await this.userService.sendUserAuthNotifications(
+      notification_data,
+    );
 
     if (!notify_data)
       throw new NotImplementedException('User Notification Not Sent');

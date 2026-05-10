@@ -97,14 +97,16 @@ export class AuditLoggerInterceptor<T> implements NestInterceptor {
     const parser = new UAParser(userAgentRaw);
     const uaResult = parser.getResult();
     const browser =
-      `${uaResult.browser.name || ''} ${uaResult.browser.version || ''}`.trim() ||
-      'Unknown Browser';
+      `${uaResult.browser.name || ''} ${
+        uaResult.browser.version || ''
+      }`.trim() || 'Unknown Browser';
     const os =
       `${uaResult.os.name || ''} ${uaResult.os.version || ''}`.trim() ||
       'Unknown OS';
     const device =
-      `${uaResult.device.vendor || ''} ${uaResult.device.model || ''} ${uaResult.device.type || ''}`.trim() ||
-      'Desktop';
+      `${uaResult.device.vendor || ''} ${uaResult.device.model || ''} ${
+        uaResult.device.type || ''
+      }`.trim() || 'Desktop';
 
     // Refactor to standard RxJS flow
     return from(this.validatorService.validateHeaders(request.headers)).pipe(
@@ -164,7 +166,9 @@ export class AuditLoggerInterceptor<T> implements NestInterceptor {
               const profile = res.data.user || res.data;
               finalUserId = profile.staffId || profile.id;
               finalUserName = (
-                `${profile.staffFirstName || ''} ${profile.staffLastName || ''}`.trim() ||
+                `${profile.staffFirstName || ''} ${
+                  profile.staffLastName || ''
+                }`.trim() ||
                 profile.staffEmail ||
                 profile.email ||
                 profile.userName ||

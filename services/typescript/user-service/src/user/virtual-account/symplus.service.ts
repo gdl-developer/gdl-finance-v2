@@ -79,8 +79,9 @@ export class SymplusService {
       try {
         const emailCheckUrl = `${this.symplusBaseUrl}/customer/email/${user.email}`;
         console.log(`Checking existence via email: ${emailCheckUrl}`);
-        const emailResponse =
-          await this.externalApiCallsService.getData(emailCheckUrl);
+        const emailResponse = await this.externalApiCallsService.getData(
+          emailCheckUrl,
+        );
         console.log('emailResponse', emailResponse);
         if (
           emailResponse &&
@@ -200,8 +201,9 @@ export class SymplusService {
         JSON.stringify(customerPayload, null, 2),
       );
 
-      const response =
-        await this.infowareService.createCustomer(customerPayload);
+      const response = await this.infowareService.createCustomer(
+        customerPayload,
+      );
       console.log(
         `Created infoware payload:`,
         JSON.stringify(response, null, 2),
@@ -268,10 +270,8 @@ export class SymplusService {
       }
 
       // 🧠 Decrypt
-      let decryptedCustomerId: string;
+      const decryptedCustomerId = wallet.encrypted_symplus_customer_id;
       // Note: User requested to stop encrypting/decrypting this field (2026-01-30)
-      // We now treat the stored value as plain text.
-      decryptedCustomerId = wallet.encrypted_symplus_customer_id;
 
       console.log(`decryptedCustomerId (raw):`, decryptedCustomerId);
 

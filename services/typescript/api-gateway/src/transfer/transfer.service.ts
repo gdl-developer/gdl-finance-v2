@@ -8,6 +8,7 @@ interface TransactionServiceClient {
   getTransactionHistory(data: any): Observable<any>;
   getBankList(data: any): Observable<any>;
   accountEnquiry(data: any): Observable<any>;
+  transactionStatusQuery(data: any): Observable<any>;
 }
 
 @Injectable()
@@ -41,6 +42,14 @@ export class TransferService implements OnModuleInit {
     return this.transactionService.accountEnquiry({
       bank_code: bankCode,
       account_number: accountNumber,
+    });
+  }
+
+  transactionStatusQuery(reference: string, date: string, amount: number) {
+    return this.transactionService.transactionStatusQuery({
+      reference,
+      date,
+      amount,
     });
   }
 }

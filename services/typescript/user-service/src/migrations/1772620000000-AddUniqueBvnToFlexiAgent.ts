@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddUniqueBvnToFlexiAgent1772620000000 implements MigrationInterface {
+export class AddUniqueBvnToFlexiAgent1772620000000
+  implements MigrationInterface
+{
   name = 'AddUniqueBvnToFlexiAgent1772620000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

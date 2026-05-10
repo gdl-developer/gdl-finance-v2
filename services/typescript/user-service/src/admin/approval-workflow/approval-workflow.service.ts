@@ -166,9 +166,9 @@ export class ApprovalWorkflowService {
   }
 
   async findAll(
-    page: number = 1,
-    limit: number = 10,
-    sortBy: string = 'createdAt',
+    page = 1,
+    limit = 10,
+    sortBy = 'createdAt',
     sortOrder: 'ASC' | 'DESC' = 'DESC',
     search?: string,
   ): Promise<{
