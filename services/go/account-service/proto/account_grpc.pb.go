@@ -24,6 +24,8 @@ const (
 	AccountService_GetRMBBalance_FullMethodName         = "/account.AccountService/GetRMBBalance"
 	AccountService_GetAccount_FullMethodName            = "/account.AccountService/GetAccount"
 	AccountService_InitializeCBAAccounts_FullMethodName = "/account.AccountService/InitializeCBAAccounts"
+	AccountService_AcquireLock_FullMethodName           = "/account.AccountService/AcquireLock"
+	AccountService_ReleaseLock_FullMethodName           = "/account.AccountService/ReleaseLock"
 )
 
 // AccountServiceClient is the client API for AccountService service.
@@ -35,6 +37,8 @@ type AccountServiceClient interface {
 	GetRMBBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error)
 	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*GetAccountResponse, error)
 	InitializeCBAAccounts(ctx context.Context, in *InitializeCBARequest, opts ...grpc.CallOption) (*InitializeCBAResponse, error)
+	AcquireLock(ctx context.Context, in *LockRequest, opts ...grpc.CallOption) (*LockResponse, error)
+	ReleaseLock(ctx context.Context, in *UnlockRequest, opts ...grpc.CallOption) (*LockResponse, error)
 }
 
 type accountServiceClient struct {
@@ -95,6 +99,26 @@ func (c *accountServiceClient) InitializeCBAAccounts(ctx context.Context, in *In
 	return out, nil
 }
 
+func (c *accountServiceClient) AcquireLock(ctx context.Context, in *LockRequest, opts ...grpc.CallOption) (*LockResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LockResponse)
+	err := c.cc.Invoke(ctx, AccountService_AcquireLock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) ReleaseLock(ctx context.Context, in *UnlockRequest, opts ...grpc.CallOption) (*LockResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LockResponse)
+	err := c.cc.Invoke(ctx, AccountService_ReleaseLock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountServiceServer is the server API for AccountService service.
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility.
@@ -104,6 +128,8 @@ type AccountServiceServer interface {
 	GetRMBBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error)
 	GetAccount(context.Context, *GetAccountRequest) (*GetAccountResponse, error)
 	InitializeCBAAccounts(context.Context, *InitializeCBARequest) (*InitializeCBAResponse, error)
+	AcquireLock(context.Context, *LockRequest) (*LockResponse, error)
+	ReleaseLock(context.Context, *UnlockRequest) (*LockResponse, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -128,6 +154,12 @@ func (UnimplementedAccountServiceServer) GetAccount(context.Context, *GetAccount
 }
 func (UnimplementedAccountServiceServer) InitializeCBAAccounts(context.Context, *InitializeCBARequest) (*InitializeCBAResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InitializeCBAAccounts not implemented")
+}
+func (UnimplementedAccountServiceServer) AcquireLock(context.Context, *LockRequest) (*LockResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AcquireLock not implemented")
+}
+func (UnimplementedAccountServiceServer) ReleaseLock(context.Context, *UnlockRequest) (*LockResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReleaseLock not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
@@ -240,6 +272,42 @@ func _AccountService_InitializeCBAAccounts_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccountService_AcquireLock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).AcquireLock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_AcquireLock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).AcquireLock(ctx, req.(*LockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_ReleaseLock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnlockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).ReleaseLock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_ReleaseLock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).ReleaseLock(ctx, req.(*UnlockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +334,14 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InitializeCBAAccounts",
 			Handler:    _AccountService_InitializeCBAAccounts_Handler,
+		},
+		{
+			MethodName: "AcquireLock",
+			Handler:    _AccountService_AcquireLock_Handler,
+		},
+		{
+			MethodName: "ReleaseLock",
+			Handler:    _AccountService_ReleaseLock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

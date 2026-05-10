@@ -47,20 +47,33 @@ func (s *server) TransferBank(ctx context.Context, req *pb.BankTransferRequest) 
 		}
 	}
 
-	// 3. EXECUTE: Call BankOne Interbank Transfer (NIP)
-	// We first fetch the user's source account from Account-Service
+	// 3. GET PAYER DETAILS: Call Identity-Service
+	profile, err := s.identity.GetProfile(ctx, &identity_pb.GetProfileRequest{UserId: req.FromUserId})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to retrieve payer profile")
+	}
+	payerName := fmt.Sprintf("%s %s", profile.FirstName, profile.LastName)
+
+	// 4. GET SOURCE ACCOUNT: Call Account-Service
 	account, err := s.account.GetBankOneBalance(ctx, &account_pb.GetBalanceRequest{UserId: req.FromUserId})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve source account")
 	}
 
+	// 5. EXECUTE: Call BankOne Interbank Transfer (NIP)
 	bankoneResp, err := s.bankone.InterbankTransfer(ctx, &bankone_pb.InterbankTransferRequest{
-		Amount:              fmt.Sprintf("%.2f", req.Amount),
-		SourceAccount:       account.AccountNumber,
-		DestinationAccount:  req.AccountNumber,
-		DestinationBankCode: req.BankCode,
-		Narration:           req.Narration,
-		Reference:           fmt.Sprintf("TRF-%d", time.Now().UnixNano()),
+		Amount:                fmt.Sprintf("%.2f", req.Amount),
+		PayerAccountNumber:    account.AccountNumber,
+		PayerName:             payerName,
+		ReceiverBankCode:      req.BankCode,
+		ReceiverAccountNumber: req.AccountNumber,
+		ReceiverName:          req.ReceiverName,
+		ReceiverPhoneNumber:   req.ReceiverPhone,
+		ReceiverAccountType:   req.ReceiverAccountType,
+		ReceiverKyc:           req.ReceiverKyc,
+		ReceiverBvn:           req.ReceiverBvn,
+		Narration:             req.Narration,
+		Reference:             fmt.Sprintf("TRF-%d", time.Now().UnixNano()),
 	})
 
 	if err != nil || !bankoneResp.Success {
@@ -70,7 +83,25 @@ func (s *server) TransferBank(ctx context.Context, req *pb.BankTransferRequest) 
 	return &pb.TransferResponse{
 		Success:        true,
 		Message:        "Interbank Transfer successful",
-		TransactionRef: bankoneResp.Message, // BankOne usually returns ref in message or data
+		TransactionRef: bankoneResp.Message,
+	}, nil
+}
+
+func (s *server) TransactionStatusQuery(ctx context.Context, req *pb.TSQRequest) (*pb.TransferResponse, error) {
+	resp, err := s.bankone.TransactionStatusQuery(ctx, &bankone_pb.TSQRequest{
+		RetrievalReference: req.Reference,
+		TransactionDate:    req.Date,
+		TransactionType:    "InterbankTransfer",
+		Amount:             fmt.Sprintf("%.2f", req.Amount),
+	})
+	if err != nil || !resp.Success {
+		return &pb.TransferResponse{Success: false, Message: "TSQ Failed: " + resp.Message}, nil
+	}
+
+	return &pb.TransferResponse{
+		Success:        true,
+		Message:        "Transaction status retrieved: " + resp.Message,
+		TransactionRef: req.Reference,
 	}, nil
 }
 

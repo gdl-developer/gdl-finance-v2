@@ -1,0 +1,71 @@
+name: Build and Deploy to Staging
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to DigitalOcean Container Registry
+        run: doctl registry login --expiry-seconds 1200
+
+      - name: Build and Push Images
+        run: |
+          # Go Services
+          docker build -t registry.digitalocean.com/gdlfinancev2/identity-service:staging ./services/go/identity-service
+          docker build -t registry.digitalocean.com/gdlfinancev2/account-service:staging ./services/go/account-service
+          docker build -t registry.digitalocean.com/gdlfinancev2/bankone-connector:staging ./services/go/bankone-connector
+          docker build -t registry.digitalocean.com/gdlfinancev2/transaction-service:staging ./services/go/transaction-service
+          
+          # TypeScript Services
+          docker build -t registry.digitalocean.com/gdlfinancev2/api-gateway:staging ./services/typescript/api-gateway
+          docker build -t registry.digitalocean.com/gdlfinancev2/saveinvest-service:staging ./services/typescript/saveinvest-service
+
+          # Push all
+          docker push registry.digitalocean.com/gdlfinancev2/identity-service:staging
+          docker push registry.digitalocean.com/gdlfinancev2/account-service:staging
+          docker push registry.digitalocean.com/gdlfinancev2/bankone-connector:staging
+          docker push registry.digitalocean.com/gdlfinancev2/transaction-service:staging
+          docker push registry.digitalocean.com/gdlfinancev2/api-gateway:staging
+          docker push registry.digitalocean.com/gdlfinancev2/saveinvest-service:staging
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to DigitalOcean Droplet
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            # 1. Enter the project directory
+            if [ ! -d "GDL-Fintech-V2" ]; then
+              git clone https://github.com/${{ github.repository }} GDL-Fintech-V2
+            fi
+            cd GDL-Fintech-V2
+            
+            # 2. Update the code
+            git pull origin main
+            
+            # 3. Log in to Registry on the droplet
+            # Ensure doctl is installed or use docker login with secret
+            echo ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} | docker login registry.digitalocean.com -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} --password-stdin
+            
+            # 4. Pull new images and restart
+            docker-compose -f docker-compose.staging.yml pull
+            docker-compose -f docker-compose.staging.yml up -d
+            
+            # 5. Clean up old images
+            docker image prune -af
