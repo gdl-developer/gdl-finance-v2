@@ -115,15 +115,20 @@ jobs:
         run: |
           SERVICE_NAME="${{ matrix.service }}"
 
-          # Check Go services first
+          # Go services — build from services/go/ root so sibling deps (e.g. bankone-connector) resolve
           if [ -d "./services/go/$SERVICE_NAME" ]; then
-            docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging --build-arg SERVICE_DIR=$SERVICE_NAME -f ./services/go/$SERVICE_NAME/Dockerfile ./services/go
-          # Check TS services
+            docker build --platform linux/amd64 \
+              -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging \
+              --build-arg SERVICE_DIR=$SERVICE_NAME \
+              -f ./services/go/$SERVICE_NAME/Dockerfile \
+              ./services/go
+
+          # TypeScript services — build from REPO ROOT so proto/ directory is available in build context
           elif [ -d "./services/typescript/$SERVICE_NAME" ]; then
-            docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging ./services/typescript/$SERVICE_NAME
-          # Check root User-Service (now moved inside the repo)
-          elif [ "$SERVICE_NAME" == "user-service" ]; then
-            docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/user-service:staging ./services/typescript/user-service
+            docker build --platform linux/amd64 \
+              -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging \
+              -f ./services/typescript/$SERVICE_NAME/Dockerfile \
+              .
           fi
 
           docker push registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging

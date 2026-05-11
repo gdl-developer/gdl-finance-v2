@@ -1,14 +1,14 @@
-# Build stage
+# Build stage — context is the REPO ROOT so proto/ is accessible
 FROM node:20 AS builder
 
 WORKDIR /app
 
-# Install dependencies
-COPY package*.json ./
+# Install dependencies from the service folder
+COPY services/typescript/api-gateway/package*.json ./
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy service source
+COPY services/typescript/api-gateway/ .
 RUN touch .env
 
 # Build the application
@@ -24,6 +24,9 @@ RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/.env .
+
+# Copy proto files from repo root — gateway loads them at runtime from /proto/
+COPY proto /proto
 
 EXPOSE 3000
 
