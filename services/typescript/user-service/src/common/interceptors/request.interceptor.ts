@@ -47,8 +47,8 @@ export class RequestInterceptor<T> implements NestInterceptor<T, Request<T>> {
 
     // ✅ Ensure header key exists
     const bearerIndex = headers.findIndex(
-      (header: string) => 
-        header.toLowerCase() === 'bearerauth' || 
+      (header: string) =>
+        header.toLowerCase() === 'bearerauth' ||
         header.toLowerCase() === 'authorization',
     );
 

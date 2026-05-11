@@ -157,7 +157,9 @@ export class CorsMiddleware implements NestMiddleware {
     // Enforce HTTPS in non-dev environments
     if (!this.isDev && !this.isSecureRequest(req)) {
       const isInternal =
-        this.isWhitelistedIp(clientIp) || req.headers['authorization'] || req.headers['bearerauth'];
+        this.isWhitelistedIp(clientIp) ||
+        req.headers['authorization'] ||
+        req.headers['bearerauth'];
       const isAuthPath = req.originalUrl?.includes('/auth/');
 
       if (isInternal || isAuthPath) {

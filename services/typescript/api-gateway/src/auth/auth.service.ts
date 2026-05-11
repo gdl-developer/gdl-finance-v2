@@ -33,7 +33,10 @@ interface IdentityServiceClient {
     marketing_consent: boolean;
     policy_version: string;
   }): Observable<any>;
-  refreshToken(data: { refresh_token: string; ip_address: string }): Observable<any>;
+  refreshToken(data: {
+    refresh_token: string;
+    ip_address: string;
+  }): Observable<any>;
 }
 
 @Injectable()
