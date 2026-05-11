@@ -132,9 +132,9 @@ func (s *server) AcquireLock(ctx context.Context, req *pb.LockRequest) (*pb.Lock
 	}, nil
 }
 
-func (s *server) ReleaseLock(ctx context.Context, req *pb.UnlockRequest) (*pb.UnlockResponse, error) {
+func (s *server) ReleaseLock(ctx context.Context, req *pb.UnlockRequest) (*pb.LockResponse, error) {
 	success := s.redis.ReleaseLock(ctx, req.Key, req.Token)
-	return &pb.UnlockResponse{
+	return &pb.LockResponse{
 		Success: success,
 	}, nil
 }
