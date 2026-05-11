@@ -34,18 +34,31 @@ export class PermissionsGuard implements CanActivate {
       this.authService.getProfile(user.user_id),
     )) as IdentityResponse;
 
-    if (!profile || !profile.role) {
-      throw new ForbiddenException('User has no assigned role');
+    if (!profile || (!profile.role && profile.user_type !== 'SUPER_ADMIN')) {
+      throw new ForbiddenException(
+        'User has no assigned role and is not a super admin',
+      );
     }
 
-    const userPermissions = profile.role.permissions.map((p) => p.name);
+    // Bypass check for SUPER_ADMIN
+    if (
+      profile.user_type === 'SUPER_ADMIN' ||
+      (profile.role && profile.role.name === 'SUPER_ADMIN')
+    ) {
+      return true;
+    }
 
+    const userPermissions = profile.role?.permissions?.map((p) => p.name) || [];
+
+    // Check if user has ALL required permissions
     const hasPermission = requiredPermissions.every((permission) =>
       userPermissions.includes(permission),
     );
 
     if (!hasPermission) {
-      throw new ForbiddenException('Insufficient permissions');
+      throw new ForbiddenException(
+        `Insufficient permissions. Required: ${requiredPermissions.join(', ')}`,
+      );
     }
 
     return true;
