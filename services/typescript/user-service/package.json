@@ -57,6 +57,7 @@
     "express-rate-limit": "^7.4.1",
     "helmet": "^7.0.0",
     "mysql": "^2.18.1",
+    "pg": "^8.11.3",
     "nest-router": "^1.0.9",
     "nestjs-console": "^7.0.0",
     "node-geocoder": "^4.0.0",

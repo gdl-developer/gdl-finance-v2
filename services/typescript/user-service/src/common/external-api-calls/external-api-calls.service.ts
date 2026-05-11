@@ -25,6 +25,10 @@ export class ExternalApiCallsService {
   ) {}
 
   private getRefreshTokenFromRequest(): string | null {
+    const authHeader = this.request.headers['authorization'] as string;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.split(' ')[1];
+    }
     return (this.request.headers['bearerauth'] as string) || null;
   }
 
@@ -88,7 +92,7 @@ export class ExternalApiCallsService {
       // replace it with the encrypted system token that internal services expect.
       if (bearerToken?.startsWith('ey') || !bearerToken) {
         if (sysAuth && eky) {
-          bearerToken = await encrypt(sysAuth, eky);
+          bearerToken = encrypt(sysAuth, eky);
         }
       }
     }
@@ -103,9 +107,9 @@ export class ExternalApiCallsService {
       Object.assign(headers, token);
     }
 
-    // 5. Critical Fix: Add bearerauth for internal service-to-service calls or when provided as string
+    // 5. Critical Fix: Add authorization for internal service-to-service calls or when provided as string
     if (bearerToken && (isInternal || typeof token === 'string')) {
-      headers.bearerauth = bearerToken;
+      headers.authorization = `Bearer ${bearerToken}`;
     }
 
     const config: any = {

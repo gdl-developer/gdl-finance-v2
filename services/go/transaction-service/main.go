@@ -158,15 +158,27 @@ func main() {
 	}
 
 	// Connect to Identity Service
-	connID, _ := grpc.Dial("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	identityUrl := os.Getenv("IDENTITY_SERVICE_URL")
+	if identityUrl == "" {
+		identityUrl = "localhost:50052"
+	}
+	connID, _ := grpc.Dial(identityUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	identityClient := identity_pb.NewIdentityServiceClient(connID)
 
 	// Connect to Account Service
-	connAcc, _ := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	accountUrl := os.Getenv("ACCOUNT_SERVICE_URL")
+	if accountUrl == "" {
+		accountUrl = "localhost:50051"
+	}
+	connAcc, _ := grpc.Dial(accountUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	accountClient := account_pb.NewAccountServiceClient(connAcc)
 
 	// Connect to BankOne Connector
-	connBankone, _ := grpc.Dial("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	bankoneUrl := os.Getenv("BANKONE_SERVICE_ADDR")
+	if bankoneUrl == "" {
+		bankoneUrl = "localhost:50054"
+	}
+	connBankone, _ := grpc.Dial(bankoneUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	bankoneClient := bankone_pb.NewBankOneServiceClient(connBankone)
 
 	lis, err := net.Listen("tcp", ":"+port)

@@ -10,6 +10,7 @@ service IdentityService {
   rpc VerifyOTP (VerifyOTPRequest) returns (VerifyOTPResponse) {}
   rpc GetProfile (GetProfileRequest) returns (GetProfileResponse) {}
   rpc ForgotPassword (ForgotPasswordRequest) returns (ForgotPasswordResponse) {}
+  rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse) {}
   
   // RBAC Management
   rpc CreateRole (CreateRoleRequest) returns (CreateRoleResponse) {}
@@ -19,10 +20,10 @@ service IdentityService {
   // Business Unit & Branch Management
   rpc CreateBusinessUnit (CreateBusinessUnitRequest) returns (CreateBusinessUnitResponse) {}
   rpc GetBusinessUnits (GetBusinessUnitsRequest) returns (GetBusinessUnitsResponse) {}
-  rpc UpdateBusinessUnit (UpdateBusinessUnitRequest) returns (UpdateBusinessUnitResponse) {}
-  rpc DeleteBusinessUnit (DeleteBusinessUnitRequest) returns (DeleteBusinessUnitResponse) {}
+  rpc UpdateBusinessUnit(UpdateBusinessUnitRequest) returns (UpdateBusinessUnitResponse) {}
+  rpc DeleteBusinessUnit(DeleteBusinessUnitRequest) returns (DeleteBusinessUnitResponse) {}
 
-  // Security & PINs
+  // PIN Management
   rpc SetPIN (SetPINRequest) returns (SetPINResponse) {}
   rpc VerifyPIN (VerifyPINRequest) returns (VerifyPINResponse) {}
   rpc CheckAccountStatus (CheckStatusRequest) returns (CheckStatusResponse) {}
@@ -36,98 +37,13 @@ service IdentityService {
   rpc SetUserSecurityQuestions (SetUserQuestionsRequest) returns (SetUserQuestionsResponse) {}
   rpc VerifySecurityAnswer (VerifyAnswerRequest) returns (VerifyAnswerResponse) {}
 
-  // NDPR/GDPR Compliance
+  // Data Privacy
   rpc ExportData (ExportDataRequest) returns (ExportDataResponse) {}
   rpc DeleteAccount (DeleteAccountRequest) returns (DeleteAccountResponse) {}
   rpc UpdateConsent (UpdateConsentRequest) returns (UpdateConsentResponse) {}
 }
 
 message Empty {}
-
-message UpdateKYCRequest {
-  string user_id = 1;
-  int32 target_level = 2; // 1, 2, 3
-}
-
-message UpdateKYCResponse {
-  bool success = 1;
-  string message = 2;
-}
-
-message GetKYCStatusRequest {
-  string user_id = 1;
-}
-
-message GetKYCStatusResponse {
-  int32 current_level = 1;
-  string level_name = 2;
-  double daily_limit = 3;
-  double max_balance = 4;
-}
-
-message SecurityQuestionsResponse {
-  repeated QuestionInfo questions = 1;
-}
-
-message QuestionInfo {
-  uint32 id = 1;
-  string question = 2;
-}
-
-message SetUserQuestionsRequest {
-  string user_id = 1;
-  repeated UserQuestionAnswer answers = 2;
-}
-
-message UserQuestionAnswer {
-  uint32 question_id = 1;
-  string answer = 2;
-}
-
-message SetUserQuestionsResponse {
-  bool success = 1;
-}
-
-message VerifyAnswerRequest {
-  string user_id = 1;
-  uint32 question_id = 2;
-  string answer = 3;
-}
-
-message VerifyAnswerResponse {
-  bool success = 1;
-}
-
-message SetPINRequest {
-  string user_id = 1;
-  string pin = 2;
-  string type = 3; // LOGIN or TRANSACTION
-}
-
-message SetPINResponse {
-  bool success = 1;
-  string message = 2;
-}
-
-message VerifyPINRequest {
-  string user_id = 1;
-  string pin = 2;
-  string type = 3; // LOGIN or TRANSACTION
-}
-
-message VerifyPINResponse {
-  bool success = 1;
-}
-
-message CheckStatusRequest {
-  string user_id = 1;
-}
-
-message CheckStatusResponse {
-  string status = 1;
-  bool is_pin_set = 2;
-  bool is_transaction_pin_set = 3;
-}
 
 message CreateBusinessUnitRequest {
   string name = 1;
@@ -137,12 +53,7 @@ message CreateBusinessUnitRequest {
 message CreateBusinessUnitResponse {
   bool success = 1;
   string unit_id = 2;
-}
-
-message GetBusinessUnitsRequest {}
-
-message GetBusinessUnitsResponse {
-  repeated BusinessUnitInfo units = 1;
+  string message = 3;
 }
 
 message UpdateBusinessUnitRequest {
@@ -163,6 +74,12 @@ message DeleteBusinessUnitRequest {
 message DeleteBusinessUnitResponse {
   bool success = 1;
   string message = 2;
+}
+
+message GetBusinessUnitsRequest {}
+
+message GetBusinessUnitsResponse {
+  repeated BusinessUnitInfo units = 1;
 }
 
 message BusinessUnitInfo {
@@ -208,11 +125,10 @@ message RegisterRequest {
   string first_name = 3;
   string last_name = 4;
   string phone_number = 5;
-  string bvn = 6;
-  bool terms_accepted = 7;
-  bool privacy_policy_accepted = 8;
-  bool marketing_consent = 9;
-  string policy_version = 10;
+  bool terms_accepted = 6;
+  bool privacy_policy_accepted = 7;
+  bool marketing_consent = 8;
+  string policy_version = 9;
 }
 
 message RegisterResponse {
@@ -226,6 +142,7 @@ message LoginRequest {
   string password = 2;
   string ip_address = 3;
   string user_agent = 4;
+  string device_id = 5;
 }
 
 message LoginResponse {
@@ -234,6 +151,7 @@ message LoginResponse {
   string refresh_token = 3;
   bool requires_2fa = 4;
   string message = 5;
+  string user_id = 6;
 }
 
 message VerifyOTPRequest {
@@ -266,6 +184,103 @@ message ForgotPasswordRequest {
 message ForgotPasswordResponse {
   bool success = 1;
   string message = 2;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+  string ip_address = 2;
+}
+
+message RefreshTokenResponse {
+  bool success = 1;
+  string token = 2;
+  string refresh_token = 3;
+  string message = 4;
+}
+
+message SetPINRequest {
+  string user_id = 1;
+  string pin = 2;
+  string type = 3;
+}
+
+message SetPINResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message VerifyPINRequest {
+  string user_id = 1;
+  string pin = 2;
+  string type = 3;
+}
+
+message VerifyPINResponse {
+  bool success = 1;
+}
+
+message CheckStatusRequest {
+  string user_id = 1;
+}
+
+message CheckStatusResponse {
+  string status = 1;
+  bool is_pin_set = 2;
+  bool is_transaction_pin_set = 3;
+}
+
+message UpdateKYCRequest {
+  string user_id = 1;
+  int32 target_level = 2;
+}
+
+message UpdateKYCResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetKYCStatusRequest {
+  string user_id = 1;
+}
+
+message GetKYCStatusResponse {
+  int32 current_level = 1;
+  string level_name = 2;
+  double daily_limit = 3;
+  double max_balance = 4;
+}
+
+message QuestionInfo {
+  uint32 id = 1;
+  string question = 2;
+}
+
+message SecurityQuestionsResponse {
+  repeated QuestionInfo questions = 1;
+}
+
+message SetUserQuestionsRequest {
+  string user_id = 1;
+  repeated SecurityAnswer answers = 2;
+}
+
+message SecurityAnswer {
+  uint32 question_id = 1;
+  string answer = 2;
+}
+
+message SetUserQuestionsResponse {
+  bool success = 1;
+}
+
+message VerifyAnswerRequest {
+  string user_id = 1;
+  uint32 question_id = 2;
+  string answer = 3;
+}
+
+message VerifyAnswerResponse {
+  bool success = 1;
 }
 
 message ExportDataRequest {

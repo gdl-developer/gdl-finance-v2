@@ -33,6 +33,7 @@ interface IdentityServiceClient {
     marketing_consent: boolean;
     policy_version: string;
   }): Observable<any>;
+  refreshToken(data: { refresh_token: string; ip_address: string }): Observable<any>;
 }
 
 @Injectable()
@@ -98,10 +99,10 @@ export class AuthService implements OnModuleInit {
     return this.identityService.getKYCStatus({ user_id: userId });
   }
 
-  upgradeKyc(userId: string, level: number) {
+  updateKycLevel(userId: string, targetLevel: number) {
     return this.identityService.updateKYCLevel({
       user_id: userId,
-      target_level: level,
+      target_level: targetLevel,
     });
   }
 
@@ -109,7 +110,7 @@ export class AuthService implements OnModuleInit {
     return this.identityService.getSecurityQuestions({});
   }
 
-  setSecurityQuestions(userId: string, answers: any[]) {
+  setUserSecurityQuestions(userId: string, answers: any[]) {
     return this.identityService.setUserSecurityQuestions({
       user_id: userId,
       answers,
@@ -124,8 +125,8 @@ export class AuthService implements OnModuleInit {
     });
   }
 
-  exportData(userId: string) {
-    return this.identityService.exportData({ user_id: userId });
+  async exportData(userId: string) {
+    return lastValueFrom(this.identityService.exportData({ user_id: userId }));
   }
 
   async deleteAccount(userId: string) {
@@ -138,5 +139,9 @@ export class AuthService implements OnModuleInit {
     return lastValueFrom(
       this.identityService.updateConsent({ user_id: userId, ...data }),
     );
+  }
+
+  refreshToken(data: { refresh_token: string; ip_address: string }) {
+    return this.identityService.refreshToken(data);
   }
 }

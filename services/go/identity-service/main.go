@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"time"
 )
@@ -406,17 +406,15 @@ func main() {
 	godotenv.Load()
 
 	dbHost := os.Getenv("DB_HOST")
-	_ = dbHost
 	dbPort := os.Getenv("DB_PORT")
-	_ = dbPort
 	dbUser := os.Getenv("DB_USERNAME")
-	_ = dbUser
 	dbPass := os.Getenv("DB_PASSWORD")
-	_ = dbPass
 	dbName := os.Getenv("DB_NAME")
-	_ = dbName
 
-	db, err := gorm.Open(sqlite.Open("identity.db"), &gorm.Config{})
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require",
+		dbHost, dbUser, dbPass, dbName, dbPort)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
@@ -429,7 +427,12 @@ func main() {
 
 	log.Println("Starting Identity Service (Go)...")
 
-	lis, err := net.Listen("tcp", ":50052")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "50052"
+	}
+
+	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

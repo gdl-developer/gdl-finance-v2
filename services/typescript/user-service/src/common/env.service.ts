@@ -8,7 +8,7 @@ export interface EnvData {
   APP_DEBUG: boolean;
 
   // database
-  DB_TYPE: 'mysql' | 'mariadb';
+  DB_TYPE: 'mysql' | 'mariadb' | 'postgres';
   DB_HOST?: string;
   DB_USERNAME: string;
   DB_PORT?: number;

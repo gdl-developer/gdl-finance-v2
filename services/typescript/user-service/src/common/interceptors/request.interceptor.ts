@@ -47,17 +47,22 @@ export class RequestInterceptor<T> implements NestInterceptor<T, Request<T>> {
 
     // ✅ Ensure header key exists
     const bearerIndex = headers.findIndex(
-      (header: string) => header.toLowerCase() === 'bearerauth',
+      (header: string) => 
+        header.toLowerCase() === 'bearerauth' || 
+        header.toLowerCase() === 'authorization',
     );
 
     if (bearerIndex === -1 || !headers[bearerIndex + 1]) {
-      this.logger.warn('Missing or invalid bearerAuth header');
+      this.logger.warn('Missing or invalid authentication header');
       throw new NotAcceptableException(
-        'Unauthorized Request: Missing bearerAuth header',
+        'Unauthorized Request: Missing auth header',
       );
     }
 
-    const authToken = headers[bearerIndex + 1];
+    let authToken = headers[bearerIndex + 1];
+    if (authToken.startsWith('Bearer ')) {
+      authToken = authToken.split(' ')[1];
+    }
     const decryptedAuth = await this.decryptKeys(authToken);
 
     if (decryptedAuth !== SYS_AUTH) {

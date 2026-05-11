@@ -5,7 +5,7 @@ import { ConnectionOptions } from 'typeorm';
 const config = new EnvService().read();
 
 const connectionOptions: ConnectionOptions = {
-  type: 'mysql',
+  type: (process.env.DB_TYPE as any) || 'postgres',
   host: config.DB_HOST,
   port: config.DB_PORT,
   username: config.DB_USERNAME,

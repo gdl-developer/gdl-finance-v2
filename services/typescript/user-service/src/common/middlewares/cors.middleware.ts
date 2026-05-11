@@ -8,10 +8,6 @@ export class CorsMiddleware implements NestMiddleware {
   private readonly allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
   private readonly allowedHeaders = [
     'Content-Type',
-    'Authorization',
-    'BearerAuth',
-    'bearerauth',
-    'Origin',
     'X-Mobile-App',
     'x-audit-metadata',
   ];
@@ -161,7 +157,7 @@ export class CorsMiddleware implements NestMiddleware {
     // Enforce HTTPS in non-dev environments
     if (!this.isDev && !this.isSecureRequest(req)) {
       const isInternal =
-        this.isWhitelistedIp(clientIp) || req.headers['bearerauth'];
+        this.isWhitelistedIp(clientIp) || req.headers['authorization'] || req.headers['bearerauth'];
       const isAuthPath = req.originalUrl?.includes('/auth/');
 
       if (isInternal || isAuthPath) {
@@ -198,6 +194,7 @@ export class CorsMiddleware implements NestMiddleware {
       // Allow internal service requests without origin
       if (
         this.isWhitelistedIp(clientIp) ||
+        req.headers['authorization'] ||
         req.headers['bearerauth'] ||
         req.headers['BearerAuth']
       ) {
