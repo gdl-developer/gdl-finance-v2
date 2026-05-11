@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
+import { Injectable } from '@nestjs/common';
 
 export interface EnvData {
   // application
@@ -76,26 +77,34 @@ export interface EnvData {
   DB_SYNCHRONIZE?: boolean;
 }
 
-import { Injectable } from '@nestjs/common';
-
 @Injectable()
 export class EnvService {
   private vars: EnvData;
 
   constructor() {
-    // Determine which .env file to load
     const environment = process.env.NODE_ENV || 'development';
+
+    // 1. Try to load environment variables from file if it exists
     const envFile = fs.existsSync(`.env.${environment}`)
       ? `.env.${environment}`
       : `.env`;
 
-    // Parse the .env file
-    const data: any = dotenv.parse(fs.readFileSync(envFile));
+    let fileConfig = {};
+    if (fs.existsSync(envFile)) {
+      try {
+        fileConfig = dotenv.parse(fs.readFileSync(envFile));
+      } catch (err) {
+        console.warn(`Failed to read env file: ${envFile}`, err.message);
+      }
+    }
 
-    // Normalize and transform
+    // 2. Merge File Config with System Process Env
+    const data: any = { ...fileConfig, ...process.env };
+
+    // 3. Normalize and transform
     data.APP_ENV = environment;
     data.NODE_ENV = data.NODE_ENV || environment;
-    data.APP_DEBUG = data.APP_DEBUG === 'true';
+    data.APP_DEBUG = data.APP_DEBUG === 'true' || data.APP_DEBUG === true;
     data.DB_PORT = data.DB_PORT ? parseInt(data.DB_PORT) : undefined;
 
     // AWS default expiration
@@ -103,7 +112,8 @@ export class EnvService {
       data.SIGNED_URL_EXPIRATION = '900'; // 15 minutes
     }
 
-    data.DB_SYNCHRONIZE = data.DB_SYNCHRONIZE === 'true';
+    data.DB_SYNCHRONIZE =
+      data.DB_SYNCHRONIZE === 'true' || data.DB_SYNCHRONIZE === true;
 
     // Required variables check
     const requiredVars = [
@@ -137,6 +147,8 @@ export class EnvService {
   }
 
   isProd(): boolean {
-    return this.vars.APP_ENV === 'production';
+    return (
+      this.vars.APP_ENV === 'production' || this.vars.NODE_ENV === 'production'
+    );
   }
 }
