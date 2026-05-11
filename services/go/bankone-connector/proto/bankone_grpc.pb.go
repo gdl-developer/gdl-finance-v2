@@ -28,6 +28,7 @@ const (
 	BankOneService_SetLien_FullMethodName                  = "/bankone.BankOneService/SetLien"
 	BankOneService_GetBVNDetails_FullMethodName            = "/bankone.BankOneService/GetBVNDetails"
 	BankOneService_InterbankTransfer_FullMethodName        = "/bankone.BankOneService/InterbankTransfer"
+	BankOneService_TransactionStatusQuery_FullMethodName   = "/bankone.BankOneService/TransactionStatusQuery"
 	BankOneService_GetOtherBankList_FullMethodName         = "/bankone.BankOneService/GetOtherBankList"
 )
 
@@ -44,6 +45,7 @@ type BankOneServiceClient interface {
 	SetLien(ctx context.Context, in *LienRequest, opts ...grpc.CallOption) (*BankOneResponse, error)
 	GetBVNDetails(ctx context.Context, in *BVNRequest, opts ...grpc.CallOption) (*BankOneResponse, error)
 	InterbankTransfer(ctx context.Context, in *InterbankTransferRequest, opts ...grpc.CallOption) (*BankOneResponse, error)
+	TransactionStatusQuery(ctx context.Context, in *TSQRequest, opts ...grpc.CallOption) (*BankOneResponse, error)
 	GetOtherBankList(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*BankOneResponse, error)
 }
 
@@ -145,6 +147,16 @@ func (c *bankOneServiceClient) InterbankTransfer(ctx context.Context, in *Interb
 	return out, nil
 }
 
+func (c *bankOneServiceClient) TransactionStatusQuery(ctx context.Context, in *TSQRequest, opts ...grpc.CallOption) (*BankOneResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BankOneResponse)
+	err := c.cc.Invoke(ctx, BankOneService_TransactionStatusQuery_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *bankOneServiceClient) GetOtherBankList(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*BankOneResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BankOneResponse)
@@ -168,6 +180,7 @@ type BankOneServiceServer interface {
 	SetLien(context.Context, *LienRequest) (*BankOneResponse, error)
 	GetBVNDetails(context.Context, *BVNRequest) (*BankOneResponse, error)
 	InterbankTransfer(context.Context, *InterbankTransferRequest) (*BankOneResponse, error)
+	TransactionStatusQuery(context.Context, *TSQRequest) (*BankOneResponse, error)
 	GetOtherBankList(context.Context, *Empty) (*BankOneResponse, error)
 	mustEmbedUnimplementedBankOneServiceServer()
 }
@@ -205,6 +218,9 @@ func (UnimplementedBankOneServiceServer) GetBVNDetails(context.Context, *BVNRequ
 }
 func (UnimplementedBankOneServiceServer) InterbankTransfer(context.Context, *InterbankTransferRequest) (*BankOneResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InterbankTransfer not implemented")
+}
+func (UnimplementedBankOneServiceServer) TransactionStatusQuery(context.Context, *TSQRequest) (*BankOneResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TransactionStatusQuery not implemented")
 }
 func (UnimplementedBankOneServiceServer) GetOtherBankList(context.Context, *Empty) (*BankOneResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOtherBankList not implemented")
@@ -392,6 +408,24 @@ func _BankOneService_InterbankTransfer_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BankOneService_TransactionStatusQuery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TSQRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BankOneServiceServer).TransactionStatusQuery(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BankOneService_TransactionStatusQuery_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BankOneServiceServer).TransactionStatusQuery(ctx, req.(*TSQRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BankOneService_GetOtherBankList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
@@ -452,6 +486,10 @@ var BankOneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InterbankTransfer",
 			Handler:    _BankOneService_InterbankTransfer_Handler,
+		},
+		{
+			MethodName: "TransactionStatusQuery",
+			Handler:    _BankOneService_TransactionStatusQuery_Handler,
 		},
 		{
 			MethodName: "GetOtherBankList",

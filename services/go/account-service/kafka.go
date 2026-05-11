@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -69,6 +70,14 @@ func handleBalanceUpdate(db *gorm.DB, rdb *RedisClient, data []byte) error {
 	if err := json.Unmarshal(data, &event); err != nil {
 		return err
 	}
+
+	// Acquire distributed lock for this account
+	lockKey := fmt.Sprintf("account:%s", event.AccountNumber)
+	locked, token := rdb.AcquireLock(context.Background(), lockKey, 10*time.Second)
+	if !locked {
+		return fmt.Errorf("failed to acquire lock for account %s", event.AccountNumber)
+	}
+	defer rdb.ReleaseLock(context.Background(), lockKey, token)
 
 	err := db.Transaction(func(tx *gorm.DB) error {
 		var account Account

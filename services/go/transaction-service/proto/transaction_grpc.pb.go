@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TransactionService_TransferInternal_FullMethodName      = "/transaction.TransactionService/TransferInternal"
-	TransactionService_TransferBank_FullMethodName          = "/transaction.TransactionService/TransferBank"
-	TransactionService_GetTransactionHistory_FullMethodName = "/transaction.TransactionService/GetTransactionHistory"
-	TransactionService_GetBankList_FullMethodName           = "/transaction.TransactionService/GetBankList"
-	TransactionService_AccountEnquiry_FullMethodName        = "/transaction.TransactionService/AccountEnquiry"
+	TransactionService_TransferInternal_FullMethodName       = "/transaction.TransactionService/TransferInternal"
+	TransactionService_TransferBank_FullMethodName           = "/transaction.TransactionService/TransferBank"
+	TransactionService_GetTransactionHistory_FullMethodName  = "/transaction.TransactionService/GetTransactionHistory"
+	TransactionService_GetBankList_FullMethodName            = "/transaction.TransactionService/GetBankList"
+	TransactionService_AccountEnquiry_FullMethodName         = "/transaction.TransactionService/AccountEnquiry"
+	TransactionService_TransactionStatusQuery_FullMethodName = "/transaction.TransactionService/TransactionStatusQuery"
 )
 
 // TransactionServiceClient is the client API for TransactionService service.
@@ -35,6 +36,7 @@ type TransactionServiceClient interface {
 	GetTransactionHistory(ctx context.Context, in *HistoryRequest, opts ...grpc.CallOption) (*HistoryResponse, error)
 	GetBankList(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*BankListResponse, error)
 	AccountEnquiry(ctx context.Context, in *EnquiryRequest, opts ...grpc.CallOption) (*EnquiryResponse, error)
+	TransactionStatusQuery(ctx context.Context, in *TSQRequest, opts ...grpc.CallOption) (*TransferResponse, error)
 }
 
 type transactionServiceClient struct {
@@ -95,6 +97,16 @@ func (c *transactionServiceClient) AccountEnquiry(ctx context.Context, in *Enqui
 	return out, nil
 }
 
+func (c *transactionServiceClient) TransactionStatusQuery(ctx context.Context, in *TSQRequest, opts ...grpc.CallOption) (*TransferResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TransferResponse)
+	err := c.cc.Invoke(ctx, TransactionService_TransactionStatusQuery_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TransactionServiceServer is the server API for TransactionService service.
 // All implementations must embed UnimplementedTransactionServiceServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type TransactionServiceServer interface {
 	GetTransactionHistory(context.Context, *HistoryRequest) (*HistoryResponse, error)
 	GetBankList(context.Context, *Empty) (*BankListResponse, error)
 	AccountEnquiry(context.Context, *EnquiryRequest) (*EnquiryResponse, error)
+	TransactionStatusQuery(context.Context, *TSQRequest) (*TransferResponse, error)
 	mustEmbedUnimplementedTransactionServiceServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedTransactionServiceServer) GetBankList(context.Context, *Empty
 }
 func (UnimplementedTransactionServiceServer) AccountEnquiry(context.Context, *EnquiryRequest) (*EnquiryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AccountEnquiry not implemented")
+}
+func (UnimplementedTransactionServiceServer) TransactionStatusQuery(context.Context, *TSQRequest) (*TransferResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TransactionStatusQuery not implemented")
 }
 func (UnimplementedTransactionServiceServer) mustEmbedUnimplementedTransactionServiceServer() {}
 func (UnimplementedTransactionServiceServer) testEmbeddedByValue()                            {}
@@ -240,6 +256,24 @@ func _TransactionService_AccountEnquiry_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TransactionService_TransactionStatusQuery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TSQRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransactionServiceServer).TransactionStatusQuery(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransactionService_TransactionStatusQuery_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransactionServiceServer).TransactionStatusQuery(ctx, req.(*TSQRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TransactionService_ServiceDesc is the grpc.ServiceDesc for TransactionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +300,10 @@ var TransactionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AccountEnquiry",
 			Handler:    _TransactionService_AccountEnquiry_Handler,
+		},
+		{
+			MethodName: "TransactionStatusQuery",
+			Handler:    _TransactionService_TransactionStatusQuery_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

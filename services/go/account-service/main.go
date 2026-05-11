@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	pb "github.com/gdl/account-service/proto"
 	bankone_pb "github.com/gdl/bankone-connector/proto"
@@ -115,6 +116,26 @@ func (s *server) InitializeCBAAccounts(ctx context.Context, req *pb.InitializeCB
 		Success:      true,
 		Message:      "Prioritized accounts initialized successfully",
 		BankoneNuban: nuban,
+	}, nil
+}
+
+func (s *server) AcquireLock(ctx context.Context, req *pb.LockRequest) (*pb.LockResponse, error) {
+	duration := time.Duration(req.DurationSeconds) * time.Second
+	if duration == 0 {
+		duration = 30 * time.Second // Default
+	}
+
+	success, token := s.redis.AcquireLock(ctx, req.Key, duration)
+	return &pb.LockResponse{
+		Success: success,
+		Token:   token,
+	}, nil
+}
+
+func (s *server) ReleaseLock(ctx context.Context, req *pb.UnlockRequest) (*pb.LockResponse, error) {
+	success := s.redis.ReleaseLock(ctx, req.Key, req.Token)
+	return &pb.LockResponse{
+		Success: success,
 	}, nil
 }
 

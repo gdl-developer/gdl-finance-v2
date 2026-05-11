@@ -58,16 +58,21 @@ func (*Empty) Descriptor() ([]byte, []int) {
 }
 
 type InterbankTransferRequest struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	Amount                 string                 `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	SourceAccount          string                 `protobuf:"bytes,2,opt,name=source_account,json=sourceAccount,proto3" json:"source_account,omitempty"`
-	DestinationAccount     string                 `protobuf:"bytes,3,opt,name=destination_account,json=destinationAccount,proto3" json:"destination_account,omitempty"`
-	DestinationBankCode    string                 `protobuf:"bytes,4,opt,name=destination_bank_code,json=destinationBankCode,proto3" json:"destination_bank_code,omitempty"`
-	DestinationAccountName string                 `protobuf:"bytes,5,opt,name=destination_account_name,json=destinationAccountName,proto3" json:"destination_account_name,omitempty"`
-	Narration              string                 `protobuf:"bytes,6,opt,name=narration,proto3" json:"narration,omitempty"`
-	Reference              string                 `protobuf:"bytes,7,opt,name=reference,proto3" json:"reference,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Amount                string                 `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"` // in Naira, will be converted to Kobo in connector
+	PayerAccountNumber    string                 `protobuf:"bytes,2,opt,name=payer_account_number,json=payerAccountNumber,proto3" json:"payer_account_number,omitempty"`
+	PayerName             string                 `protobuf:"bytes,3,opt,name=payer_name,json=payerName,proto3" json:"payer_name,omitempty"`
+	ReceiverBankCode      string                 `protobuf:"bytes,4,opt,name=receiver_bank_code,json=receiverBankCode,proto3" json:"receiver_bank_code,omitempty"`
+	ReceiverAccountNumber string                 `protobuf:"bytes,5,opt,name=receiver_account_number,json=receiverAccountNumber,proto3" json:"receiver_account_number,omitempty"`
+	ReceiverName          string                 `protobuf:"bytes,6,opt,name=receiver_name,json=receiverName,proto3" json:"receiver_name,omitempty"`
+	ReceiverPhoneNumber   string                 `protobuf:"bytes,7,opt,name=receiver_phone_number,json=receiverPhoneNumber,proto3" json:"receiver_phone_number,omitempty"`
+	ReceiverAccountType   string                 `protobuf:"bytes,8,opt,name=receiver_account_type,json=receiverAccountType,proto3" json:"receiver_account_type,omitempty"`
+	ReceiverKyc           string                 `protobuf:"bytes,9,opt,name=receiver_kyc,json=receiverKyc,proto3" json:"receiver_kyc,omitempty"`
+	ReceiverBvn           string                 `protobuf:"bytes,10,opt,name=receiver_bvn,json=receiverBvn,proto3" json:"receiver_bvn,omitempty"`
+	Narration             string                 `protobuf:"bytes,11,opt,name=narration,proto3" json:"narration,omitempty"`
+	Reference             string                 `protobuf:"bytes,12,opt,name=reference,proto3" json:"reference,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *InterbankTransferRequest) Reset() {
@@ -107,30 +112,65 @@ func (x *InterbankTransferRequest) GetAmount() string {
 	return ""
 }
 
-func (x *InterbankTransferRequest) GetSourceAccount() string {
+func (x *InterbankTransferRequest) GetPayerAccountNumber() string {
 	if x != nil {
-		return x.SourceAccount
+		return x.PayerAccountNumber
 	}
 	return ""
 }
 
-func (x *InterbankTransferRequest) GetDestinationAccount() string {
+func (x *InterbankTransferRequest) GetPayerName() string {
 	if x != nil {
-		return x.DestinationAccount
+		return x.PayerName
 	}
 	return ""
 }
 
-func (x *InterbankTransferRequest) GetDestinationBankCode() string {
+func (x *InterbankTransferRequest) GetReceiverBankCode() string {
 	if x != nil {
-		return x.DestinationBankCode
+		return x.ReceiverBankCode
 	}
 	return ""
 }
 
-func (x *InterbankTransferRequest) GetDestinationAccountName() string {
+func (x *InterbankTransferRequest) GetReceiverAccountNumber() string {
 	if x != nil {
-		return x.DestinationAccountName
+		return x.ReceiverAccountNumber
+	}
+	return ""
+}
+
+func (x *InterbankTransferRequest) GetReceiverName() string {
+	if x != nil {
+		return x.ReceiverName
+	}
+	return ""
+}
+
+func (x *InterbankTransferRequest) GetReceiverPhoneNumber() string {
+	if x != nil {
+		return x.ReceiverPhoneNumber
+	}
+	return ""
+}
+
+func (x *InterbankTransferRequest) GetReceiverAccountType() string {
+	if x != nil {
+		return x.ReceiverAccountType
+	}
+	return ""
+}
+
+func (x *InterbankTransferRequest) GetReceiverKyc() string {
+	if x != nil {
+		return x.ReceiverKyc
+	}
+	return ""
+}
+
+func (x *InterbankTransferRequest) GetReceiverBvn() string {
+	if x != nil {
+		return x.ReceiverBvn
 	}
 	return ""
 }
@@ -149,6 +189,74 @@ func (x *InterbankTransferRequest) GetReference() string {
 	return ""
 }
 
+type TSQRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	RetrievalReference string                 `protobuf:"bytes,1,opt,name=retrieval_reference,json=retrievalReference,proto3" json:"retrieval_reference,omitempty"`
+	TransactionDate    string                 `protobuf:"bytes,2,opt,name=transaction_date,json=transactionDate,proto3" json:"transaction_date,omitempty"` // YYYY-MM-DD
+	TransactionType    string                 `protobuf:"bytes,3,opt,name=transaction_type,json=transactionType,proto3" json:"transaction_type,omitempty"`
+	Amount             string                 `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"` // in Naira
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *TSQRequest) Reset() {
+	*x = TSQRequest{}
+	mi := &file_bankone_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TSQRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TSQRequest) ProtoMessage() {}
+
+func (x *TSQRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_bankone_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TSQRequest.ProtoReflect.Descriptor instead.
+func (*TSQRequest) Descriptor() ([]byte, []int) {
+	return file_bankone_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *TSQRequest) GetRetrievalReference() string {
+	if x != nil {
+		return x.RetrievalReference
+	}
+	return ""
+}
+
+func (x *TSQRequest) GetTransactionDate() string {
+	if x != nil {
+		return x.TransactionDate
+	}
+	return ""
+}
+
+func (x *TSQRequest) GetTransactionType() string {
+	if x != nil {
+		return x.TransactionType
+	}
+	return ""
+}
+
+func (x *TSQRequest) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
 type CreateAccountQuickRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FirstName     string                 `protobuf:"bytes,1,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
@@ -162,7 +270,7 @@ type CreateAccountQuickRequest struct {
 
 func (x *CreateAccountQuickRequest) Reset() {
 	*x = CreateAccountQuickRequest{}
-	mi := &file_bankone_proto_msgTypes[2]
+	mi := &file_bankone_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -174,7 +282,7 @@ func (x *CreateAccountQuickRequest) String() string {
 func (*CreateAccountQuickRequest) ProtoMessage() {}
 
 func (x *CreateAccountQuickRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[2]
+	mi := &file_bankone_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +295,7 @@ func (x *CreateAccountQuickRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAccountQuickRequest.ProtoReflect.Descriptor instead.
 func (*CreateAccountQuickRequest) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{2}
+	return file_bankone_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CreateAccountQuickRequest) GetFirstName() string {
@@ -237,7 +345,7 @@ type CreateCustomerRequest struct {
 
 func (x *CreateCustomerRequest) Reset() {
 	*x = CreateCustomerRequest{}
-	mi := &file_bankone_proto_msgTypes[3]
+	mi := &file_bankone_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -249,7 +357,7 @@ func (x *CreateCustomerRequest) String() string {
 func (*CreateCustomerRequest) ProtoMessage() {}
 
 func (x *CreateCustomerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[3]
+	mi := &file_bankone_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -262,7 +370,7 @@ func (x *CreateCustomerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCustomerRequest.ProtoReflect.Descriptor instead.
 func (*CreateCustomerRequest) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{3}
+	return file_bankone_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CreateCustomerRequest) GetFirstName() string {
@@ -302,7 +410,7 @@ type BalanceRequest struct {
 
 func (x *BalanceRequest) Reset() {
 	*x = BalanceRequest{}
-	mi := &file_bankone_proto_msgTypes[4]
+	mi := &file_bankone_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -314,7 +422,7 @@ func (x *BalanceRequest) String() string {
 func (*BalanceRequest) ProtoMessage() {}
 
 func (x *BalanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[4]
+	mi := &file_bankone_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -327,7 +435,7 @@ func (x *BalanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BalanceRequest.ProtoReflect.Descriptor instead.
 func (*BalanceRequest) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{4}
+	return file_bankone_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BalanceRequest) GetAccountNumber() string {
@@ -348,7 +456,7 @@ type BalanceResponse struct {
 
 func (x *BalanceResponse) Reset() {
 	*x = BalanceResponse{}
-	mi := &file_bankone_proto_msgTypes[5]
+	mi := &file_bankone_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -360,7 +468,7 @@ func (x *BalanceResponse) String() string {
 func (*BalanceResponse) ProtoMessage() {}
 
 func (x *BalanceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[5]
+	mi := &file_bankone_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -373,7 +481,7 @@ func (x *BalanceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BalanceResponse.ProtoReflect.Descriptor instead.
 func (*BalanceResponse) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{5}
+	return file_bankone_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *BalanceResponse) GetSuccess() bool {
@@ -408,7 +516,7 @@ type TransactionsRequest struct {
 
 func (x *TransactionsRequest) Reset() {
 	*x = TransactionsRequest{}
-	mi := &file_bankone_proto_msgTypes[6]
+	mi := &file_bankone_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -420,7 +528,7 @@ func (x *TransactionsRequest) String() string {
 func (*TransactionsRequest) ProtoMessage() {}
 
 func (x *TransactionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[6]
+	mi := &file_bankone_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -433,7 +541,7 @@ func (x *TransactionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionsRequest.ProtoReflect.Descriptor instead.
 func (*TransactionsRequest) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{6}
+	return file_bankone_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *TransactionsRequest) GetAccountNumber() string {
@@ -467,7 +575,7 @@ type TransactionsResponse struct {
 
 func (x *TransactionsResponse) Reset() {
 	*x = TransactionsResponse{}
-	mi := &file_bankone_proto_msgTypes[7]
+	mi := &file_bankone_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -479,7 +587,7 @@ func (x *TransactionsResponse) String() string {
 func (*TransactionsResponse) ProtoMessage() {}
 
 func (x *TransactionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[7]
+	mi := &file_bankone_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -492,7 +600,7 @@ func (x *TransactionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionsResponse.ProtoReflect.Descriptor instead.
 func (*TransactionsResponse) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{7}
+	return file_bankone_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TransactionsResponse) GetSuccess() bool {
@@ -521,7 +629,7 @@ type TransactionInfo struct {
 
 func (x *TransactionInfo) Reset() {
 	*x = TransactionInfo{}
-	mi := &file_bankone_proto_msgTypes[8]
+	mi := &file_bankone_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -533,7 +641,7 @@ func (x *TransactionInfo) String() string {
 func (*TransactionInfo) ProtoMessage() {}
 
 func (x *TransactionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[8]
+	mi := &file_bankone_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -546,7 +654,7 @@ func (x *TransactionInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionInfo.ProtoReflect.Descriptor instead.
 func (*TransactionInfo) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{8}
+	return file_bankone_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *TransactionInfo) GetAmount() string {
@@ -586,7 +694,7 @@ type AccountEnquiryRequest struct {
 
 func (x *AccountEnquiryRequest) Reset() {
 	*x = AccountEnquiryRequest{}
-	mi := &file_bankone_proto_msgTypes[9]
+	mi := &file_bankone_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -598,7 +706,7 @@ func (x *AccountEnquiryRequest) String() string {
 func (*AccountEnquiryRequest) ProtoMessage() {}
 
 func (x *AccountEnquiryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[9]
+	mi := &file_bankone_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -611,7 +719,7 @@ func (x *AccountEnquiryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountEnquiryRequest.ProtoReflect.Descriptor instead.
 func (*AccountEnquiryRequest) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{9}
+	return file_bankone_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *AccountEnquiryRequest) GetAccountNumber() string {
@@ -631,7 +739,7 @@ type PNDRequest struct {
 
 func (x *PNDRequest) Reset() {
 	*x = PNDRequest{}
-	mi := &file_bankone_proto_msgTypes[10]
+	mi := &file_bankone_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -643,7 +751,7 @@ func (x *PNDRequest) String() string {
 func (*PNDRequest) ProtoMessage() {}
 
 func (x *PNDRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[10]
+	mi := &file_bankone_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -656,7 +764,7 @@ func (x *PNDRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PNDRequest.ProtoReflect.Descriptor instead.
 func (*PNDRequest) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{10}
+	return file_bankone_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *PNDRequest) GetAccountNumber() string {
@@ -684,7 +792,7 @@ type LienRequest struct {
 
 func (x *LienRequest) Reset() {
 	*x = LienRequest{}
-	mi := &file_bankone_proto_msgTypes[11]
+	mi := &file_bankone_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -696,7 +804,7 @@ func (x *LienRequest) String() string {
 func (*LienRequest) ProtoMessage() {}
 
 func (x *LienRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[11]
+	mi := &file_bankone_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -709,7 +817,7 @@ func (x *LienRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LienRequest.ProtoReflect.Descriptor instead.
 func (*LienRequest) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{11}
+	return file_bankone_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *LienRequest) GetAccountNumber() string {
@@ -742,7 +850,7 @@ type BVNRequest struct {
 
 func (x *BVNRequest) Reset() {
 	*x = BVNRequest{}
-	mi := &file_bankone_proto_msgTypes[12]
+	mi := &file_bankone_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -754,7 +862,7 @@ func (x *BVNRequest) String() string {
 func (*BVNRequest) ProtoMessage() {}
 
 func (x *BVNRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[12]
+	mi := &file_bankone_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -767,7 +875,7 @@ func (x *BVNRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BVNRequest.ProtoReflect.Descriptor instead.
 func (*BVNRequest) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{12}
+	return file_bankone_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *BVNRequest) GetBvn() string {
@@ -788,7 +896,7 @@ type BankOneResponse struct {
 
 func (x *BankOneResponse) Reset() {
 	*x = BankOneResponse{}
-	mi := &file_bankone_proto_msgTypes[13]
+	mi := &file_bankone_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -800,7 +908,7 @@ func (x *BankOneResponse) String() string {
 func (*BankOneResponse) ProtoMessage() {}
 
 func (x *BankOneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_bankone_proto_msgTypes[13]
+	mi := &file_bankone_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -813,7 +921,7 @@ func (x *BankOneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BankOneResponse.ProtoReflect.Descriptor instead.
 func (*BankOneResponse) Descriptor() ([]byte, []int) {
-	return file_bankone_proto_rawDescGZIP(), []int{13}
+	return file_bankone_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *BankOneResponse) GetSuccess() bool {
@@ -842,15 +950,28 @@ var File_bankone_proto protoreflect.FileDescriptor
 const file_bankone_proto_rawDesc = "" +
 	"\n" +
 	"\rbankone.proto\x12\abankone\"\a\n" +
-	"\x05Empty\"\xb4\x02\n" +
+	"\x05Empty\"\xf8\x03\n" +
 	"\x18InterbankTransferRequest\x12\x16\n" +
-	"\x06amount\x18\x01 \x01(\tR\x06amount\x12%\n" +
-	"\x0esource_account\x18\x02 \x01(\tR\rsourceAccount\x12/\n" +
-	"\x13destination_account\x18\x03 \x01(\tR\x12destinationAccount\x122\n" +
-	"\x15destination_bank_code\x18\x04 \x01(\tR\x13destinationBankCode\x128\n" +
-	"\x18destination_account_name\x18\x05 \x01(\tR\x16destinationAccountName\x12\x1c\n" +
-	"\tnarration\x18\x06 \x01(\tR\tnarration\x12\x1c\n" +
-	"\treference\x18\a \x01(\tR\treference\"\xa6\x01\n" +
+	"\x06amount\x18\x01 \x01(\tR\x06amount\x120\n" +
+	"\x14payer_account_number\x18\x02 \x01(\tR\x12payerAccountNumber\x12\x1d\n" +
+	"\n" +
+	"payer_name\x18\x03 \x01(\tR\tpayerName\x12,\n" +
+	"\x12receiver_bank_code\x18\x04 \x01(\tR\x10receiverBankCode\x126\n" +
+	"\x17receiver_account_number\x18\x05 \x01(\tR\x15receiverAccountNumber\x12#\n" +
+	"\rreceiver_name\x18\x06 \x01(\tR\freceiverName\x122\n" +
+	"\x15receiver_phone_number\x18\a \x01(\tR\x13receiverPhoneNumber\x122\n" +
+	"\x15receiver_account_type\x18\b \x01(\tR\x13receiverAccountType\x12!\n" +
+	"\freceiver_kyc\x18\t \x01(\tR\vreceiverKyc\x12!\n" +
+	"\freceiver_bvn\x18\n" +
+	" \x01(\tR\vreceiverBvn\x12\x1c\n" +
+	"\tnarration\x18\v \x01(\tR\tnarration\x12\x1c\n" +
+	"\treference\x18\f \x01(\tR\treference\"\xab\x01\n" +
+	"\n" +
+	"TSQRequest\x12/\n" +
+	"\x13retrieval_reference\x18\x01 \x01(\tR\x12retrievalReference\x12)\n" +
+	"\x10transaction_date\x18\x02 \x01(\tR\x0ftransactionDate\x12)\n" +
+	"\x10transaction_type\x18\x03 \x01(\tR\x0ftransactionType\x12\x16\n" +
+	"\x06amount\x18\x04 \x01(\tR\x06amount\"\xa6\x01\n" +
 	"\x19CreateAccountQuickRequest\x12\x1d\n" +
 	"\n" +
 	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1b\n" +
@@ -898,7 +1019,7 @@ const file_bankone_proto_rawDesc = "" +
 	"\x0fBankOneResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\tR\x04data2\xdb\x05\n" +
+	"\x04data\x18\x03 \x01(\tR\x04data2\xa4\x06\n" +
 	"\x0eBankOneService\x12R\n" +
 	"\x12CreateAccountQuick\x12\".bankone.CreateAccountQuickRequest\x1a\x18.bankone.BankOneResponse\x12T\n" +
 	"\x18CreateCustomerAndAccount\x12\x1e.bankone.CreateCustomerRequest\x1a\x18.bankone.BankOneResponse\x12?\n" +
@@ -909,7 +1030,8 @@ const file_bankone_proto_rawDesc = "" +
 	"\x06SetPND\x12\x13.bankone.PNDRequest\x1a\x18.bankone.BankOneResponse\x129\n" +
 	"\aSetLien\x12\x14.bankone.LienRequest\x1a\x18.bankone.BankOneResponse\x12>\n" +
 	"\rGetBVNDetails\x12\x13.bankone.BVNRequest\x1a\x18.bankone.BankOneResponse\x12P\n" +
-	"\x11InterbankTransfer\x12!.bankone.InterbankTransferRequest\x1a\x18.bankone.BankOneResponse\x12<\n" +
+	"\x11InterbankTransfer\x12!.bankone.InterbankTransferRequest\x1a\x18.bankone.BankOneResponse\x12G\n" +
+	"\x16TransactionStatusQuery\x12\x13.bankone.TSQRequest\x1a\x18.bankone.BankOneResponse\x12<\n" +
 	"\x10GetOtherBankList\x12\x0e.bankone.Empty\x1a\x18.bankone.BankOneResponseB(Z&github.com/gdl/bankone-connector/protob\x06proto3"
 
 var (
@@ -924,47 +1046,50 @@ func file_bankone_proto_rawDescGZIP() []byte {
 	return file_bankone_proto_rawDescData
 }
 
-var file_bankone_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_bankone_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_bankone_proto_goTypes = []any{
 	(*Empty)(nil),                     // 0: bankone.Empty
 	(*InterbankTransferRequest)(nil),  // 1: bankone.InterbankTransferRequest
-	(*CreateAccountQuickRequest)(nil), // 2: bankone.CreateAccountQuickRequest
-	(*CreateCustomerRequest)(nil),     // 3: bankone.CreateCustomerRequest
-	(*BalanceRequest)(nil),            // 4: bankone.BalanceRequest
-	(*BalanceResponse)(nil),           // 5: bankone.BalanceResponse
-	(*TransactionsRequest)(nil),       // 6: bankone.TransactionsRequest
-	(*TransactionsResponse)(nil),      // 7: bankone.TransactionsResponse
-	(*TransactionInfo)(nil),           // 8: bankone.TransactionInfo
-	(*AccountEnquiryRequest)(nil),     // 9: bankone.AccountEnquiryRequest
-	(*PNDRequest)(nil),                // 10: bankone.PNDRequest
-	(*LienRequest)(nil),               // 11: bankone.LienRequest
-	(*BVNRequest)(nil),                // 12: bankone.BVNRequest
-	(*BankOneResponse)(nil),           // 13: bankone.BankOneResponse
+	(*TSQRequest)(nil),                // 2: bankone.TSQRequest
+	(*CreateAccountQuickRequest)(nil), // 3: bankone.CreateAccountQuickRequest
+	(*CreateCustomerRequest)(nil),     // 4: bankone.CreateCustomerRequest
+	(*BalanceRequest)(nil),            // 5: bankone.BalanceRequest
+	(*BalanceResponse)(nil),           // 6: bankone.BalanceResponse
+	(*TransactionsRequest)(nil),       // 7: bankone.TransactionsRequest
+	(*TransactionsResponse)(nil),      // 8: bankone.TransactionsResponse
+	(*TransactionInfo)(nil),           // 9: bankone.TransactionInfo
+	(*AccountEnquiryRequest)(nil),     // 10: bankone.AccountEnquiryRequest
+	(*PNDRequest)(nil),                // 11: bankone.PNDRequest
+	(*LienRequest)(nil),               // 12: bankone.LienRequest
+	(*BVNRequest)(nil),                // 13: bankone.BVNRequest
+	(*BankOneResponse)(nil),           // 14: bankone.BankOneResponse
 }
 var file_bankone_proto_depIdxs = []int32{
-	8,  // 0: bankone.TransactionsResponse.transactions:type_name -> bankone.TransactionInfo
-	2,  // 1: bankone.BankOneService.CreateAccountQuick:input_type -> bankone.CreateAccountQuickRequest
-	3,  // 2: bankone.BankOneService.CreateCustomerAndAccount:input_type -> bankone.CreateCustomerRequest
-	4,  // 3: bankone.BankOneService.GetBalance:input_type -> bankone.BalanceRequest
-	6,  // 4: bankone.BankOneService.GetTransactions:input_type -> bankone.TransactionsRequest
-	9,  // 5: bankone.BankOneService.AccountEnquiry:input_type -> bankone.AccountEnquiryRequest
-	10, // 6: bankone.BankOneService.SetPND:input_type -> bankone.PNDRequest
-	11, // 7: bankone.BankOneService.SetLien:input_type -> bankone.LienRequest
-	12, // 8: bankone.BankOneService.GetBVNDetails:input_type -> bankone.BVNRequest
+	9,  // 0: bankone.TransactionsResponse.transactions:type_name -> bankone.TransactionInfo
+	3,  // 1: bankone.BankOneService.CreateAccountQuick:input_type -> bankone.CreateAccountQuickRequest
+	4,  // 2: bankone.BankOneService.CreateCustomerAndAccount:input_type -> bankone.CreateCustomerRequest
+	5,  // 3: bankone.BankOneService.GetBalance:input_type -> bankone.BalanceRequest
+	7,  // 4: bankone.BankOneService.GetTransactions:input_type -> bankone.TransactionsRequest
+	10, // 5: bankone.BankOneService.AccountEnquiry:input_type -> bankone.AccountEnquiryRequest
+	11, // 6: bankone.BankOneService.SetPND:input_type -> bankone.PNDRequest
+	12, // 7: bankone.BankOneService.SetLien:input_type -> bankone.LienRequest
+	13, // 8: bankone.BankOneService.GetBVNDetails:input_type -> bankone.BVNRequest
 	1,  // 9: bankone.BankOneService.InterbankTransfer:input_type -> bankone.InterbankTransferRequest
-	0,  // 10: bankone.BankOneService.GetOtherBankList:input_type -> bankone.Empty
-	13, // 11: bankone.BankOneService.CreateAccountQuick:output_type -> bankone.BankOneResponse
-	13, // 12: bankone.BankOneService.CreateCustomerAndAccount:output_type -> bankone.BankOneResponse
-	5,  // 13: bankone.BankOneService.GetBalance:output_type -> bankone.BalanceResponse
-	7,  // 14: bankone.BankOneService.GetTransactions:output_type -> bankone.TransactionsResponse
-	13, // 15: bankone.BankOneService.AccountEnquiry:output_type -> bankone.BankOneResponse
-	13, // 16: bankone.BankOneService.SetPND:output_type -> bankone.BankOneResponse
-	13, // 17: bankone.BankOneService.SetLien:output_type -> bankone.BankOneResponse
-	13, // 18: bankone.BankOneService.GetBVNDetails:output_type -> bankone.BankOneResponse
-	13, // 19: bankone.BankOneService.InterbankTransfer:output_type -> bankone.BankOneResponse
-	13, // 20: bankone.BankOneService.GetOtherBankList:output_type -> bankone.BankOneResponse
-	11, // [11:21] is the sub-list for method output_type
-	1,  // [1:11] is the sub-list for method input_type
+	2,  // 10: bankone.BankOneService.TransactionStatusQuery:input_type -> bankone.TSQRequest
+	0,  // 11: bankone.BankOneService.GetOtherBankList:input_type -> bankone.Empty
+	14, // 12: bankone.BankOneService.CreateAccountQuick:output_type -> bankone.BankOneResponse
+	14, // 13: bankone.BankOneService.CreateCustomerAndAccount:output_type -> bankone.BankOneResponse
+	6,  // 14: bankone.BankOneService.GetBalance:output_type -> bankone.BalanceResponse
+	8,  // 15: bankone.BankOneService.GetTransactions:output_type -> bankone.TransactionsResponse
+	14, // 16: bankone.BankOneService.AccountEnquiry:output_type -> bankone.BankOneResponse
+	14, // 17: bankone.BankOneService.SetPND:output_type -> bankone.BankOneResponse
+	14, // 18: bankone.BankOneService.SetLien:output_type -> bankone.BankOneResponse
+	14, // 19: bankone.BankOneService.GetBVNDetails:output_type -> bankone.BankOneResponse
+	14, // 20: bankone.BankOneService.InterbankTransfer:output_type -> bankone.BankOneResponse
+	14, // 21: bankone.BankOneService.TransactionStatusQuery:output_type -> bankone.BankOneResponse
+	14, // 22: bankone.BankOneService.GetOtherBankList:output_type -> bankone.BankOneResponse
+	12, // [12:23] is the sub-list for method output_type
+	1,  // [1:12] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -981,7 +1106,7 @@ func file_bankone_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_bankone_proto_rawDesc), len(file_bankone_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
