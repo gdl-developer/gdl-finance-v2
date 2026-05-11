@@ -13,12 +13,16 @@ import {
   UnauthorizedException,
   ClassSerializerInterceptor,
   UseInterceptors,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Request, Response } from 'express';
+import { getClientIp } from 'request-ip';
 import { AuthService } from './auth.service';
 import { HowYouHeardAboutUs, UserAccount } from '../user/entities/user.entity';
 import { LoginDto } from './dto/login-dto';
 import { RegisterDto } from './dto/register.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ValidateTokenDto } from './dto/validate-token.dto';
 import { TokenVerifyActionDto } from './dto/forgot-password-action.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -30,8 +34,6 @@ import { SetTempLoginDto } from './dto/set-temp-login.dto';
 import { LoginWithhTempPinDto } from './dto/login-with-temp-pin.dto';
 import { AuditLogger } from 'src/common/audit-logger/utils/audit-log.decorator';
 import { AdminRegisterUserDto } from './dto/admin-register-user.dto';
-import { Request, Response } from 'express';
-import { getClientIp } from 'request-ip';
 import { CheckAbilities } from 'src/common/casl-ability-rbac/abilities.decorator';
 import { AbilitiesGuard } from 'src/common/casl-ability-rbac/abilities.guard';
 import { Action } from 'src/common/casl-ability-rbac/ability.factory';
@@ -398,13 +400,6 @@ export class AuthController {
       message: `Cleanup completed: ${result.expired} expired and ${result.used} old used OTP records removed`,
     };
   }
-
-  // @Post('validate/t/pin')
-  // @AuditLogger('ValidateTxnPin')
-  // async validateTxnPin(@Body() validateTxnPinDto: ValidateTxnPinDto) {
-  //   const v_res = await this.authService.validateUserTxnPin(validateTxnPinDto);
-  //   return { success: true, data: v_res };
-  // }
 
   @Post('refresh-token')
   @ApiOperation({ summary: 'Refresh Access Token' })
