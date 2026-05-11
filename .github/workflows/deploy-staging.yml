@@ -138,14 +138,27 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: "30m"
           script: |
-            mkdir -p /home/root/gdl-v2
-            cd /home/root/gdl-v2
-            # Log in and update
+            # root's home is /root, not /home/root
+            mkdir -p /root/gdl-v2
+            cd /root/gdl-v2
+
+            # Clone the repo if not already present
+            if [ ! -f "docker-compose.staging.yml" ]; then
+              git clone https://github.com/gdl-developer/gdl-finance-v2.git .
+            else
+              git pull origin develop
+            fi
+
+            # Log in to registry
             doctl registry login
-            # Pull images from the registry
-            docker-compose -f docker-compose.staging.yml pull
-            # Start the hardened services
+
+            # Pull images one group at a time to avoid timeout
+            docker-compose -f docker-compose.staging.yml pull --no-parallel
+
+            # Start all services
             docker-compose -f docker-compose.staging.yml up -d
-            # Cleanup
+
+            # Cleanup old images
             docker image prune -f
