@@ -90,4 +90,30 @@ export class AdminController {
   getSignatories() {
     throw new NotImplementedException('DMS Signatories migration is pending');
   }
+
+  // --- Expected Missing Endpoints for Flexi & Asset Management Admin ---
+
+  @Get('flexi/requests/pending-approval')
+  @Permissions('FLEXI_ADMIN_VIEW')
+  getFlexiPendingRequests() {
+    throw new NotImplementedException(
+      'Flexi admin approvals migration is pending',
+    );
+  }
+
+  @Get('flexi/requests/all-pending')
+  @Permissions('FLEXI_ADMIN_VIEW')
+  getAllFlexiRequests() {
+    throw new NotImplementedException(
+      'Flexi admin reporting migration is pending',
+    );
+  }
+
+  @Get('asset-management/deposits')
+  @Permissions('ASSET_MANAGEMENT_VIEW')
+  getAssetManagementDeposits() {
+    throw new NotImplementedException(
+      'Asset Management deposit requests migration is pending',
+    );
+  }
 }
