@@ -1,4 +1,4 @@
-module audit-service
+module github.com/gdl/audit-service
 
 go 1.26.2
 

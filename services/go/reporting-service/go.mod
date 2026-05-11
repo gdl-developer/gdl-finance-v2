@@ -1,4 +1,4 @@
-module reporting-service
+module github.com/gdl/reporting-service
 
 go 1.26.2
 

@@ -1,4 +1,4 @@
-module compliance-service
+module github.com/gdl/compliance-service
 
 go 1.26.2
 
