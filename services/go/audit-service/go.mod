@@ -5,6 +5,8 @@ go 1.26.2
 require (
 	github.com/joho/godotenv v1.5.1
 	github.com/segmentio/kafka-go v0.4.51
+	google.golang.org/grpc v1.80.0
+	google.golang.org/protobuf v1.36.11
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
@@ -21,4 +23,7 @@ require (
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 )
+
+replace github.com/gdl/audit-service/proto => ./proto

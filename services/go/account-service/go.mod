@@ -36,3 +36,5 @@ require (
 replace github.com/gdl/bankone-connector => ../bankone-connector
 
 replace github.com/gdl/symplus-service => ../symplus-service
+
+replace github.com/gdl/account-service/proto => ./proto
