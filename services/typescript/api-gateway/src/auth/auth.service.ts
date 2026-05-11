@@ -102,7 +102,7 @@ export class AuthService implements OnModuleInit {
     return this.identityService.getKYCStatus({ user_id: userId });
   }
 
-  updateKycLevel(userId: string, targetLevel: number) {
+  upgradeKyc(userId: string, targetLevel: number) {
     return this.identityService.updateKYCLevel({
       user_id: userId,
       target_level: targetLevel,
@@ -113,7 +113,7 @@ export class AuthService implements OnModuleInit {
     return this.identityService.getSecurityQuestions({});
   }
 
-  setUserSecurityQuestions(userId: string, answers: any[]) {
+  setSecurityQuestions(userId: string, answers: any[]) {
     return this.identityService.setUserSecurityQuestions({
       user_id: userId,
       answers,

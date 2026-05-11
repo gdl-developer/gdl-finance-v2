@@ -3,6 +3,7 @@ export interface IdentityResponse {
   message: string;
   token?: string;
   user_id?: string;
+  user_type?: string;
   role?: {
     name: string;
     permissions: Array<{ name: string }>;
