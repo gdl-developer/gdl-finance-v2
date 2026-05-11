@@ -21,21 +21,20 @@ jobs:
 
       - name: Build and Push Images
         run: |
-          # Go Services
-          docker build -t registry.digitalocean.com/gdlfinancev2/identity-service:staging ./services/go/identity-service
-          docker build -t registry.digitalocean.com/gdlfinancev2/account-service:staging ./services/go/account-service
-          docker build -t registry.digitalocean.com/gdlfinancev2/bankone-connector:staging ./services/go/bankone-connector
-          docker build -t registry.digitalocean.com/gdlfinancev2/transaction-service:staging ./services/go/transaction-service
-          
-          # TypeScript Services
-          docker build -t registry.digitalocean.com/gdlfinancev2/api-gateway:staging ./services/typescript/api-gateway
-          docker build -t registry.digitalocean.com/gdlfinancev2/saveinvest-service:staging ./services/typescript/saveinvest-service
+          # Go Services — must build from services/go/ root so sibling deps resolve
+          for SERVICE in identity-service account-service bankone-connector transaction-service; do
+            docker build --platform linux/amd64 \
+              -t registry.digitalocean.com/gdlfinancev2/$SERVICE:staging \
+              --build-arg SERVICE_DIR=$SERVICE \
+              -f ./services/go/$SERVICE/Dockerfile \
+              ./services/go
+            docker push registry.digitalocean.com/gdlfinancev2/$SERVICE:staging
+          done
 
-          # Push all
-          docker push registry.digitalocean.com/gdlfinancev2/identity-service:staging
-          docker push registry.digitalocean.com/gdlfinancev2/account-service:staging
-          docker push registry.digitalocean.com/gdlfinancev2/bankone-connector:staging
-          docker push registry.digitalocean.com/gdlfinancev2/transaction-service:staging
+          # TypeScript Services
+          docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/api-gateway:staging ./services/typescript/api-gateway
+          docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/saveinvest-service:staging ./services/typescript/saveinvest-service
+
           docker push registry.digitalocean.com/gdlfinancev2/api-gateway:staging
           docker push registry.digitalocean.com/gdlfinancev2/saveinvest-service:staging
 
