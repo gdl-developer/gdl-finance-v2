@@ -2,19 +2,6 @@ version: "3.8"
 
 services:
   # Infrastructure
-  postgres:
-    image: postgres:15-alpine
-    container_name: gdl-v2-db
-    restart: always
-    environment:
-      POSTGRES_DB: gdl_v2
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
-    ports:
-      - "5432:5432"
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-
   redis:
     image: redis:7-alpine
     container_name: gdl-v2-redis
@@ -31,7 +18,6 @@ services:
       - "50051:50051"
     env_file: .env.staging
     depends_on:
-      - postgres
       - redis
 
   account-service:
@@ -42,7 +28,6 @@ services:
       - "50052:50052"
     env_file: .env.staging
     depends_on:
-      - postgres
       - redis
 
   audit-service:
@@ -52,8 +37,6 @@ services:
     ports:
       - "50053:50053"
     env_file: .env.staging
-    depends_on:
-      - postgres
 
   bankone-connector:
     image: registry.digitalocean.com/gdlfinancev2/bankone-connector:staging
@@ -70,8 +53,6 @@ services:
     ports:
       - "50055:50055"
     env_file: .env.staging
-    depends_on:
-      - postgres
 
   notification-service:
     image: registry.digitalocean.com/gdlfinancev2/notification-service:staging
@@ -88,8 +69,6 @@ services:
     ports:
       - "50057:50057"
     env_file: .env.staging
-    depends_on:
-      - postgres
 
   symplus-connector:
     image: registry.digitalocean.com/gdlfinancev2/symplus-connector:staging
@@ -106,8 +85,6 @@ services:
     ports:
       - "50059:50059"
     env_file: .env.staging
-    depends_on:
-      - postgres
 
   transaction-service:
     image: registry.digitalocean.com/gdlfinancev2/transaction-service:staging
@@ -117,7 +94,6 @@ services:
       - "50060:50060"
     env_file: .env.staging
     depends_on:
-      - postgres
       - redis
 
   # TypeScript Services
