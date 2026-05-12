@@ -4,6 +4,9 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { CompanyUserService } from '../company-user.service';
 
 // Validate JWT secret at module load time
+const getJwtSecret = () => {
+  return process.env.JWT_SECRET || 'your_secret_key';
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

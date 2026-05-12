@@ -19,11 +19,8 @@ export class JwtAuthUtilsService {
   // AES-256-CBC Encryption
   encryptPayload(payload: Record<string, unknown>): string {
     const iv = crypto.randomBytes(IV_LENGTH); // Generate a random IV
-    const cipher = crypto.createCipheriv(
-      'aes-256-cbc',
-      Buffer.from(ENCRYPTION_KEY),
-      iv,
-    );
+    const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest(); // Ensure 32 bytes
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
     let encrypted = cipher.update(JSON.stringify(payload), 'utf8', 'hex');
     encrypted += cipher.final('hex');
     return iv.toString('hex') + ':' + encrypted;
@@ -37,11 +34,8 @@ export class JwtAuthUtilsService {
     }
 
     const iv = Buffer.from(ivHex, 'hex');
-    const decipher = crypto.createDecipheriv(
-      'aes-256-cbc',
-      Buffer.from(ENCRYPTION_KEY),
-      iv,
-    );
+    const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest(); // Ensure 32 bytes
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
     let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return JSON.parse(decrypted);
@@ -98,10 +92,74 @@ export class JwtAuthUtilsService {
   }
 
   /**
-   * Invalidate a token (for single-use scenarios like password reset)
+   * Generates a device/user fingerprint to prevent token replay
    */
-  invalidateJti(jti: string, ttlSeconds = 3600): void {
-    this.usedJtis.set(jti, Date.now() + ttlSeconds * 1000);
+  generateFingerprint(identifier: string, ip: string): string {
+    return crypto
+      .createHash('sha256')
+      .update(`${identifier}-${ip}`)
+      .digest('hex');
+  }
+
+  /**
+   * Signs a JWT token
+   */
+  async jwTSign(
+    payload: string | Record<string, any>,
+    secret: string,
+    expiresIn?: string | number,
+  ): Promise<string> {
+    const data = typeof payload === 'string' ? { data: payload } : payload;
+    return this.jwtService.sign(data, {
+      secret,
+      expiresIn: expiresIn as any,
+    });
+  }
+
+  /**
+   * Validates a token and its fingerprint
+   */
+  async validateToken(
+    token: string,
+    clientIp: string,
+    isRefresh: boolean,
+    secret: string,
+  ): Promise<any> {
+    try {
+      const decoded = await this.jwtService.verifyAsync(token, { secret });
+      const payload = decoded.data
+        ? this.decryptPayload(decoded.data)
+        : decoded;
+
+      // Optional fingerprint validation if present in payload
+      if (payload.fingerprint && payload.username) {
+        const currentFingerprint = this.generateFingerprint(
+          payload.username,
+          clientIp,
+        );
+        if (payload.fingerprint !== currentFingerprint) {
+          throw new NotAcceptableException('Invalid token fingerprint');
+        }
+      }
+
+      return payload;
+    } catch (error) {
+      throw new NotAcceptableException(
+        error.message || 'Invalid or expired token',
+      );
+    }
+  }
+
+  /**
+   * Validates a refresh token specifically
+   */
+  async validateRefreshToken(token: string, secret: string): Promise<any> {
+    try {
+      const decoded = await this.jwtService.verifyAsync(token, { secret });
+      return decoded.data ? this.decryptPayload(decoded.data) : decoded;
+    } catch (error) {
+      throw new NotAcceptableException('Invalid or expired refresh token');
+    }
   }
 
   // Cleanup expired JTIs
