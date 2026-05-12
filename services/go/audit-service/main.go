@@ -63,8 +63,10 @@ func main() {
 
 	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
 	if kafkaBrokers == "" {
-		kafkaBrokers = "localhost:9092"
+		kafkaBrokers = "kafka:29092"
 	}
+	log.Printf("Connecting to Kafka at: %s", kafkaBrokers)
+	log.Printf("Connecting to Kafka at: %s", kafkaBrokers)
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{kafkaBrokers},

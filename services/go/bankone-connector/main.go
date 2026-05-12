@@ -58,8 +58,9 @@ func main() {
 	baseURL := os.Getenv("BANKONE_BASEURL")
 	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
 	if kafkaBrokers == "" {
-		kafkaBrokers = "localhost:9092"
+		kafkaBrokers = "kafka:29092"
 	}
+	log.Printf("Connecting to Kafka at: %s", kafkaBrokers)
 
 	grpcPort := os.Getenv("PORT")
 	if grpcPort == "" {
