@@ -48,5 +48,3 @@ func (x *RefreshTokenResponse) String() string {
 }
 
 func (*RefreshTokenResponse) ProtoMessage() {}
-
-func (*RefreshTokenResponse) ProtoMessage() {}
