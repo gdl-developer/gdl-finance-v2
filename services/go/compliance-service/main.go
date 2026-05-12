@@ -76,7 +76,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "50054"
+		port = "50055"
 	}
 
 	lis, err := net.Listen("tcp", ":"+port)

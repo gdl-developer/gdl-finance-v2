@@ -10,8 +10,8 @@ services:
   identity-service:
     image: registry.digitalocean.com/gdlfinancev2/identity-service:staging
     restart: always
-    ports:
-      - "50051:50051"
+    environment:
+      - PORT=50051
     env_file: .env.staging
     depends_on:
       - redis
@@ -19,8 +19,8 @@ services:
   account-service:
     image: registry.digitalocean.com/gdlfinancev2/account-service:staging
     restart: always
-    ports:
-      - "50052:50052"
+    environment:
+      - PORT=50052
     env_file: .env.staging
     depends_on:
       - redis
@@ -28,57 +28,57 @@ services:
   audit-service:
     image: registry.digitalocean.com/gdlfinancev2/audit-service:staging
     restart: always
-    ports:
-      - "50053:50053"
+    environment:
+      - PORT=50053
     env_file: .env.staging
 
   bankone-connector:
     image: registry.digitalocean.com/gdlfinancev2/bankone-connector:staging
     restart: always
-    ports:
-      - "50054:50054"
+    environment:
+      - PORT=50054
     env_file: .env.staging
 
   compliance-service:
     image: registry.digitalocean.com/gdlfinancev2/compliance-service:staging
     restart: always
-    ports:
-      - "50055:50055"
+    environment:
+      - PORT=50055
     env_file: .env.staging
 
   notification-service:
     image: registry.digitalocean.com/gdlfinancev2/notification-service:staging
     restart: always
-    ports:
-      - "50056:50056"
+    environment:
+      - PORT=50056
     env_file: .env.staging
 
   reporting-service:
     image: registry.digitalocean.com/gdlfinancev2/reporting-service:staging
     restart: always
-    ports:
-      - "50057:50057"
+    environment:
+      - PORT=50057
     env_file: .env.staging
 
   symplus-connector:
     image: registry.digitalocean.com/gdlfinancev2/symplus-connector:staging
     restart: always
-    ports:
-      - "50058:50058"
+    environment:
+      - PORT=50058
     env_file: .env.staging
 
   symplus-service:
     image: registry.digitalocean.com/gdlfinancev2/symplus-service:staging
     restart: always
-    ports:
-      - "50059:50059"
+    environment:
+      - PORT=50059
     env_file: .env.staging
 
   transaction-service:
     image: registry.digitalocean.com/gdlfinancev2/transaction-service:staging
     restart: always
-    ports:
-      - "50060:50060"
+    environment:
+      - PORT=50060
     env_file: .env.staging
     depends_on:
       - redis
@@ -87,6 +87,8 @@ services:
   api-gateway:
     image: registry.digitalocean.com/gdlfinancev2/api-gateway:staging
     restart: always
+    environment:
+      - PORT=3000
     ports:
       - "3000:3000"
     env_file: .env.staging
@@ -139,6 +141,8 @@ services:
   user-service:
     image: registry.digitalocean.com/gdlfinancev2/user-service:staging
     restart: always
+    environment:
+      - PORT=3080
     ports:
       - "3080:3080"
     env_file: .env.staging

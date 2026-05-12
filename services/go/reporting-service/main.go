@@ -12,9 +12,37 @@ import (
 
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
+
+// maskPII redacts sensitive info for logs
+func maskPII(input string) string {
+	if len(input) <= 4 {
+		return "****"
+	}
+	return input[:2] + "****" + input[len(input)-2:]
+}
+
+func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	secret := md["x-internal-secret"]
+	expectedSecret := os.Getenv("INTERNAL_SECURITY_KEY")
+
+	if len(secret) == 0 || secret[0] != expectedSecret {
+		log.Printf("Unauthorized internal access attempt to %s", info.FullMethod)
+		return nil, status.Errorf(codes.Unauthenticated, "invalid internal security key")
+	}
+
+	return handler(ctx, req)
+}
 
 type server struct {
 	pb.UnimplementedReportingServiceServer
@@ -101,7 +129,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "50055"
+		port = "50057"
 	}
 
 	lis, err := net.Listen("tcp", ":"+port)
@@ -109,7 +137,9 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(
+		grpc.UnaryInterceptor(authInterceptor),
+	)
 	pb.RegisterReportingServiceServer(srv, &server{db: db})
 
 	log.Printf("Reporting Service listening on :%s", port)

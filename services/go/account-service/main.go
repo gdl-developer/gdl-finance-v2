@@ -14,13 +14,36 @@ import (
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/health"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
-	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
+
+// maskPII redacts sensitive info for logs
+func maskPII(input string) string {
+	if len(input) <= 4 {
+		return "****"
+	}
+	return input[:2] + "****" + input[len(input)-2:]
+}
+
+func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	secret := md["x-internal-secret"]
+	expectedSecret := os.Getenv("INTERNAL_SECURITY_KEY")
+
+	if len(secret) == 0 || secret[0] != expectedSecret {
+		log.Printf("Unauthorized internal access attempt to %s", info.FullMethod)
+		return nil, status.Errorf(codes.Unauthenticated, "invalid internal security key")
+	}
+
+	return handler(ctx, req)
+}
 
 type server struct {
 	pb.UnimplementedAccountServiceServer
@@ -79,7 +102,7 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 }
 
 func (s *server) InitializeCBAAccounts(ctx context.Context, req *pb.InitializeCBARequest) (*pb.InitializeCBAResponse, error) {
-	log.Printf("Initializing prioritized accounts for user: %s", req.UserId)
+	log.Printf("Initializing prioritized accounts for user: %s", maskPII(req.UserId))
 
 	bankoneResp, err := s.clients.BankOne.CreateAccountQuick(ctx, &bankone_pb.CreateAccountQuickRequest{
 		FirstName:   req.FirstName,
@@ -151,11 +174,13 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "50051"
+		port = "50052"
 	}
 
 	lis, _ := net.Listen("tcp", ":"+port)
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(authInterceptor),
+	)
 
 	pb.RegisterAccountServiceServer(s, &server{db: db, clients: clients, redis: rdb})
 

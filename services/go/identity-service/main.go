@@ -9,15 +9,40 @@ import (
 	"time"
 
 	pb "github.com/gdl/identity-service/proto"
-
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
+
+// maskPII redacts sensitive info for logs
+func maskPII(input string) string {
+	if len(input) <= 4 {
+		return "****"
+	}
+	return input[:2] + "****" + input[len(input)-2:]
+}
+
+func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	secret := md["x-internal-secret"]
+	expectedSecret := os.Getenv("INTERNAL_SECURITY_KEY")
+
+	if len(secret) == 0 || secret[0] != expectedSecret {
+		log.Printf("Unauthorized internal access attempt to %s", info.FullMethod)
+		return nil, status.Errorf(codes.Unauthenticated, "invalid internal security key")
+	}
+
+	return handler(ctx, req)
+}
 
 type server struct {
 	pb.UnimplementedIdentityServiceServer
@@ -397,7 +422,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "50052"
+		port = "50051"
 	}
 
 	lis, err := net.Listen("tcp", ":"+port)
@@ -405,7 +430,9 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(authInterceptor),
+	)
 	pb.RegisterIdentityServiceServer(s, &server{db: db})
 
 	log.Printf("Server listening at %v", lis.Addr())
