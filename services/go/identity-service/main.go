@@ -424,9 +424,10 @@ func main() {
 	log.Println("Starting Identity Service (Go)...")
 
 	port := os.Getenv("PORT")
-	if port == "" {
+	if port == "" || port == "3000" {
 		port = "50051"
 	}
+	log.Printf("Identity Service configuring to listen on port: %s", port)
 
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {

@@ -82,8 +82,8 @@ type User struct {
 
 type Company struct {
 	ID              uint           `gorm:"primaryKey" json:"id"`
-	Name            string         `gorm:"uniqueIndex;not null" json:"name"`
-	RegistrationNum string         `gorm:"uniqueIndex" json:"registration_num"` // RC Number
+	Name            string         `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
+	RegistrationNum string         `gorm:"type:varchar(255);uniqueIndex" json:"registration_num"` // RC Number
 	TaxID           string         `json:"tax_id"`
 	Address         string         `json:"address"`
 	Status          string         `gorm:"default:'PENDING_APPROVAL'" json:"status"`
@@ -118,7 +118,7 @@ type Permission struct {
 
 type BusinessUnit struct {
 	ID        uint     `gorm:"primaryKey" json:"id"`
-	Name      string   `gorm:"uniqueIndex;not null" json:"name"`
+	Name      string   `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
 	ManagerID uint     `json:"manager_id"`
 	Branches  []Branch `json:"branches"`
 	CreatedAt time.Time
@@ -127,7 +127,7 @@ type BusinessUnit struct {
 
 type Branch struct {
 	ID             uint         `gorm:"primaryKey" json:"id"`
-	Name           string       `gorm:"uniqueIndex;not null" json:"name"`
+	Name           string       `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
 	Address        string       `json:"address"`
 	BusinessUnitID uint         `json:"business_unit_id"`
 	BusinessUnit   BusinessUnit `json:"-"`
