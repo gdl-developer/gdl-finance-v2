@@ -1,3 +1,3 @@
 module github.com/gdl/notification-service
 
-go 1.24
+go 1.26.2
