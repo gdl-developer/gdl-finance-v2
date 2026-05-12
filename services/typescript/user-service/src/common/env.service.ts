@@ -37,6 +37,8 @@ export class EnvService {
     data.ACCESS_AUTH = data.ACCESS_AUTH || 'your_access_auth_secret';
     data.REFRESH_AUTH = data.REFRESH_AUTH || 'your_refresh_auth_secret';
     data.JWT_SECRET = data.JWT_SECRET || 'your_secret_key';
+    data.ADMIN_ACCESS_AUTH = data.ADMIN_ACCESS_AUTH || data.ACCESS_AUTH;
+    data.JWTCONSTANTS = data.JWTCONSTANTS || data.ACCESS_AUTH;
 
     // AWS default expiration
     if (!data.SIGNED_URL_EXPIRATION) {
