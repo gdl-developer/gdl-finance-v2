@@ -64,10 +64,10 @@ export class AuthController {
         return res.send({
           success: true,
           message: 'Login successful',
-          data: { 
+          data: {
             user_id: result.user_id,
             token: result.token,
-            refresh_token: result.refresh_token 
+            refresh_token: result.refresh_token,
           },
         });
       }
