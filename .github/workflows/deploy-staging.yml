@@ -158,11 +158,12 @@ jobs:
             # Log in to registry
             doctl registry login
 
-            # Run the full pull + restart in the background
+            # Run the full deployment sequence in the background
             # Logs written to /root/deploy.log for debugging
             nohup bash -c "
-              docker-compose -f docker-compose.staging.yml pull --no-parallel &&
-              docker-compose -f docker-compose.staging.yml up -d &&
+              docker compose -f docker-compose.staging.yml down --remove-orphans &&
+              docker compose -f docker-compose.staging.yml pull &&
+              docker compose -f docker-compose.staging.yml up -d --build &&
               docker image prune -f
             " > /root/deploy.log 2>&1 &
 

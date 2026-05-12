@@ -19,10 +19,10 @@ ssh ${DROPLET_USER}@${DROPLET_IP} << EOF
   cd ${REMOTE_DIR}
   # Ensure we are logged in to the registry
   doctl registry login --expiry-seconds 600
-  # Pull new images
-  docker-compose -f docker-compose.staging.yml pull
-  # Restart stack
-  docker-compose -f docker-compose.staging.yml up -d
+  # Pull and restart stack
+  docker compose -f docker-compose.staging.yml down --remove-orphans
+  docker compose -f docker-compose.staging.yml pull
+  docker compose -f docker-compose.staging.yml up -d --build
   # Cleanup old images to save space
   docker image prune -f
 EOF

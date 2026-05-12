@@ -63,8 +63,9 @@ jobs:
             echo ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} | docker login registry.digitalocean.com -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} --password-stdin
             
             # 4. Pull new images and restart
-            docker-compose -f docker-compose.staging.yml pull
-            docker-compose -f docker-compose.staging.yml up -d
+            docker compose -f docker-compose.staging.yml down --remove-orphans
+            docker compose -f docker-compose.staging.yml pull
+            docker compose -f docker-compose.staging.yml up -d --build
             
             # 5. Clean up old images
             docker image prune -af
