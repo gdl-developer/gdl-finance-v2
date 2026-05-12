@@ -40,7 +40,7 @@ export class AuthController {
     try {
       const result = (await firstValueFrom(
         this.authService.login(payload),
-      )) as IdentityResponse;
+      )) as any;
 
       if (result && result.success && result.token) {
         void res.setCookie('access_token', result.token, {
@@ -51,10 +51,24 @@ export class AuthController {
           maxAge: 15 * 60,
         });
 
+        if (result.refresh_token) {
+          void res.setCookie('refresh_token', result.refresh_token, {
+            httpOnly: true,
+            secure: true,
+            path: '/',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60,
+          });
+        }
+
         return res.send({
           success: true,
           message: 'Login successful',
-          data: { user_id: result.user_id },
+          data: { 
+            user_id: result.user_id,
+            token: result.token,
+            refresh_token: result.refresh_token 
+          },
         });
       }
       throw new UnauthorizedException('Invalid credentials');

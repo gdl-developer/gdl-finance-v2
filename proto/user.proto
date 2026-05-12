@@ -175,6 +175,8 @@ message GetProfileResponse {
   string last_name = 3;
   string phone_number = 4;
   string status = 5;
+  string user_type = 6;
+  RoleInfo role = 7;
 }
 
 message ForgotPasswordRequest {

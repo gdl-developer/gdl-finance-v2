@@ -5,8 +5,9 @@ export interface IdentityResponse {
   user_id?: string;
   user_type?: string;
   role?: {
+    id: string;
     name: string;
-    permissions: Array<{ name: string }>;
+    permissions: string[];
   };
 }
 
@@ -17,7 +18,8 @@ export interface UserProfile {
   phone_number: string;
   status: string;
   role?: {
+    id: string;
     name: string;
-    permissions: Array<{ name: string }>;
+    permissions: string[];
   };
 }

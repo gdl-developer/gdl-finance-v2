@@ -1,40 +1,54 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"os"
+	"time"
 
-	pb "github.com/gdl/audit-service/proto"
 	"github.com/joho/godotenv"
-	"google.golang.org/grpc"
+	"github.com/segmentio/kafka-go"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-type server struct {
-	pb.UnimplementedAuditServiceServer
-	db *gorm.DB
+type AuditLog struct {
+	gorm.Model
+	UserID          string `json:"user_id"`
+	UserType        string `json:"user_type"`
+	UserName        string `json:"user_name"`
+	Roles           string `json:"roles"`
+	ActionPerformed string `json:"action_performed"`
+	IPAddress       string `json:"ip_address"`
+	Attributes      string `json:"attributes"`
 }
 
-type AuditLog struct {
-	ID        uint   `gorm:"primaryKey"`
-	UserId    string `gorm:"not null"`
-	Action    string `gorm:"not null"`
-	Metadata  string
-	Timestamp int64
+func startDataRetentionWorker(db *gorm.DB) {
+	ticker := time.NewTicker(24 * time.Hour)
+	for range ticker.C {
+		// Delete records older than 90 days
+		cutoff := time.Now().AddDate(0, 0, -90)
+		result := db.Where("created_at < ?", cutoff).Delete(&AuditLog{})
+		if result.Error != nil {
+			log.Printf("error during data retention cleanup: %v", result.Error)
+		} else {
+			log.Printf("deleted %d old audit logs", result.RowsAffected)
+		}
+	}
 }
 
 func main() {
 	godotenv.Load()
-	
+
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	dbUser := os.Getenv("DB_USERNAME")
 	dbPass := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 
+	// Use URI-style DSN for TLS compatibility
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require",
 		dbUser, dbPass, dbHost, dbPort, dbName)
 
@@ -42,26 +56,49 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
-	
+
 	db.AutoMigrate(&AuditLog{})
 
-	log.Println("Starting Audit Service (Go)...")
+	// Start Data Retention Worker
+	go startDataRetentionWorker(db)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "50058"
+	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
+	if kafkaBrokers == "" {
+		kafkaBrokers = "localhost:9092"
 	}
 
-	lis, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	
-	s := grpc.NewServer()
-	pb.RegisterAuditServiceServer(s, &server{db: db})
+	reader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:  []string{kafkaBrokers},
+		Topic:    "SECURITY_EVENT",
+		GroupID:  "audit-service-group",
+		MinBytes: 10e3, // 10KB
+		MaxBytes: 10e6, // 10MB
+	})
 
-	log.Printf("Server listening at %v", lis.Addr())
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+	log.Println("Audit Service started, consuming from Kafka...")
+
+	for {
+		m, err := reader.ReadMessage(context.Background())
+		if err != nil {
+			log.Printf("error while reading message: %v", err)
+			break
+		}
+
+		var logEntry AuditLog
+		if err := json.Unmarshal(m.Value, &logEntry); err != nil {
+			log.Printf("error unmarshaling log entry: %v", err)
+			continue
+		}
+
+		if err := db.Create(&logEntry).Error; err != nil {
+			log.Printf("error saving log entry to DB: %v", err)
+			continue
+		}
+
+		log.Printf("Logged action: %s by user: %s", logEntry.ActionPerformed, logEntry.UserID)
+	}
+
+	if err := reader.Close(); err != nil {
+		log.Fatal("failed to close reader:", err)
 	}
 }

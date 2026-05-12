@@ -12,7 +12,10 @@ import { IdentityResponse } from '../../auth/interfaces/identity.interface';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private reflector: Reflector, private authService: AuthService) {}
+  constructor(
+    private reflector: Reflector,
+    private authService: AuthService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredPermissions = this.reflector.get<string[]>(
@@ -48,7 +51,7 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const userPermissions = profile.role?.permissions?.map((p) => p.name) || [];
+    const userPermissions = profile.role?.permissions || [];
 
     // Check if user has ALL required permissions
     const hasPermission = requiredPermissions.every((permission) =>

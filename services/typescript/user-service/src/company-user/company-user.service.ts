@@ -569,14 +569,6 @@ export class CompanyUserService {
     user: CompanyUser,
     clientIp: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const jwtSecret = process.env.JWT_SECRET;
-    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET;
-
-    if (!jwtSecret || !jwtRefreshSecret) {
-      throw new Error(
-        'JWT_SECRET and JWT_REFRESH_SECRET environment variables are required but not set',
-      );
-    }
 
     const payload = {
       sub: user.id,

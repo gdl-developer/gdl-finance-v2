@@ -115,19 +115,6 @@ export class EnvService {
     data.DB_SYNCHRONIZE =
       data.DB_SYNCHRONIZE === 'true' || data.DB_SYNCHRONIZE === true;
 
-    // Required variables check
-    const requiredVars = [
-      'AWS_REGION',
-      'AWS_ACCESS_KEY_ID',
-      'AWS_SECRET_ACCESS_KEY',
-      'S3_BUCKET_NAME',
-      'IP_ADD_KEY',
-      'PUBLIC_KEY_SECRET',
-      'USER_BASE_URL',
-      'DEFAULT_BANK_CODE',
-    ];
-
-    for (const key of requiredVars) {
       if (!data[key]) {
         console.warn(`Missing required environment variable: ${key}`);
       }

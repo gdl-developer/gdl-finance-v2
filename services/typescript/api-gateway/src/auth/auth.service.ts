@@ -59,7 +59,7 @@ export class AuthService implements OnModuleInit {
   }
 
   getProfile(userId: string) {
-    return this.identityService.getProfile({ userId });
+    return this.identityService.getProfile({ user_id: userId });
   }
 
   createRole(data: any) {

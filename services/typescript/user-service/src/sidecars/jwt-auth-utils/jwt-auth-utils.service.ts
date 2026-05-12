@@ -5,9 +5,9 @@ import * as crypto from 'crypto';
 import * as dotenv from 'dotenv'; // Load environment variables
 dotenv.config();
 
-const ACCESS_AUTH = process.env.ACCESS_AUTH;
+const ACCESS_AUTH = process.env.ACCESS_AUTH || 'your_access_auth_secret';
 const IV_LENGTH = 16; // AES block size for CBC mode
-const ENCRYPTION_KEY = process.env.PAYLOAD_ENCRYPTION_SECRET;
+const ENCRYPTION_KEY = process.env.PAYLOAD_ENCRYPTION_SECRET || 'your_payload_encryption_secret_32'; // Must be 32 bytes for aes-256
 
 @Injectable()
 export class JwtAuthUtilsService {
@@ -178,33 +178,3 @@ export class JwtAuthUtilsService {
     }
   }
 }
-
-/*
-    // Sign JWT with encrypted payload
-    // const access_token = this.jwtService.sign(
-    //   { data: encryptedPayload },
-    //   {
-    //     algorithm: 'HS256',
-    //     expiresIn: '15m',
-    //     secret: ACCESS_AUTH,
-    //   },
-    // );
-
-    // jwtService.sign(
-    //   { data: encryptedPayload },
-    //   {
-    //     algorithm: 'HS256',
-    //     expiresIn: '15m',
-    //     secret: REFRESH_AUTH, // Use environment variable
-    //   },
-    // );
-
-    // jwtService.sign(
-    //   { data: encryptedPayload },
-    //   {
-    //     algorithm: 'HS256',
-    //     expiresIn: '30m',
-    //     secret: ADMIN_ACCESS_AUTH, // Use environment variable
-    //   },
-    // );
-*/

@@ -12,7 +12,10 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService, private reflector: Reflector) {}
+  constructor(
+    private jwtService: JwtService,
+    private reflector: Reflector,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -29,9 +32,7 @@ export class AuthGuard implements CanActivate {
     }
     try {
       const payload: { user_id: string; role: string } =
-        await this.jwtService.verifyAsync(token, {
-          secret: 'your_secret_key',
-        });
+        await this.jwtService.verifyAsync(token, {});
       request.user = payload;
     } catch {
       throw new UnauthorizedException();
