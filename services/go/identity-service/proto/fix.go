@@ -49,18 +49,4 @@ func (x *RefreshTokenResponse) String() string {
 
 func (*RefreshTokenResponse) ProtoMessage() {}
 
-type GetRolesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetRolesRequest) Reset() {
-	*x = GetRolesRequest{}
-}
-
-func (x *GetRolesRequest) String() string {
-	return "GetRolesRequest"
-}
-
-func (*GetRolesRequest) ProtoMessage() {}
+func (*RefreshTokenResponse) ProtoMessage() {}
