@@ -11,7 +11,7 @@ require (
 	github.com/gdl/bankone-connector v0.0.0
 	github.com/gdl/identity-service v0.0.0-00010101000000-000000000000
 	github.com/joho/godotenv v1.5.1
-	google.golang.org/grpc v1.80.0
+	google.golang.org/grpc v1.81.0
 	google.golang.org/protobuf v1.36.11
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.30.0
@@ -24,7 +24,7 @@ require (
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
 )
 
 replace github.com/gdl/transaction-service/proto => ./proto
