@@ -94,7 +94,7 @@ func (s *server) CompleteProfile(ctx context.Context, req *pb.CompleteProfileReq
 	// V1 Logic: Step 2 updates profile and activates account
 	user.FirstName = req.FirstName
 	user.LastName = req.LastName
-	user.PhoneNumber = req.PhoneNumber
+	user.PhoneNumber = &req.PhoneNumber
 	user.DateOfBirth = req.DateOfBirth
 	user.Address = req.Address
 	user.Country = req.Country
