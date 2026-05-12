@@ -376,8 +376,8 @@ func main() {
 	dbPass := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require",
-		dbUser, dbPass, dbHost, dbPort, dbName)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require",
+		dbHost, dbUser, dbPass, dbName, dbPort)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
