@@ -24,7 +24,7 @@ export class DecryptionInterceptor implements NestInterceptor {
           iv: request.body.iv,
         });
         request.body = decryptedBody;
-      } catch (e) {
+      } catch {
         throw new BadRequestException('Encryption handshake failed');
       }
     }

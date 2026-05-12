@@ -6,7 +6,15 @@ describe('ReportingService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ReportingService],
+      providers: [
+        ReportingService,
+        {
+          provide: 'REPORTING_PACKAGE',
+          useValue: {
+            getService: jest.fn().mockReturnValue({}),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<ReportingService>(ReportingService);

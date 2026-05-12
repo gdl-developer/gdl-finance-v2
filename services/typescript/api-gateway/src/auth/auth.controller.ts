@@ -12,7 +12,6 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { firstValueFrom } from 'rxjs';
 
-import { IdentityResponse } from './interfaces/identity.interface';
 import { AuthenticatedRequest } from './interfaces/request.interface';
 
 @Controller('auth')
@@ -38,9 +37,7 @@ export class AuthController {
     };
 
     try {
-      const result = (await firstValueFrom(
-        this.authService.login(payload),
-      )) as any;
+      const result = await firstValueFrom(this.authService.login(payload));
 
       if (result && result.success && result.token) {
         void res.setCookie('access_token', result.token, {
@@ -113,12 +110,12 @@ export class AuthController {
     }
 
     try {
-      const result = (await firstValueFrom(
+      const result = await firstValueFrom(
         this.authService.refreshToken({
           refresh_token: refreshToken,
           ip_address: req.ip,
         }),
-      )) as any;
+      );
 
       if (result && result.success) {
         void res.setCookie('access_token', result.token, {
@@ -148,7 +145,7 @@ export class AuthController {
         });
       }
       throw new UnauthorizedException('Invalid refresh token');
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }

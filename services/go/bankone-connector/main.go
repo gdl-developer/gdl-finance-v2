@@ -13,7 +13,10 @@ import (
 	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
 
@@ -88,6 +91,10 @@ func main() {
 		)
 		client := NewBankOneClient(baseURL, authToken)
 		pb.RegisterBankOneServiceServer(s, &server{client: client})
+		healthServer := health.NewServer()
+		healthpb.RegisterHealthServer(s, healthServer)
+		healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+		reflection.Register(s)
 
 		log.Printf("gRPC BankOne Connector listening at %v", lis.Addr())
 		if err := s.Serve(lis); err != nil {

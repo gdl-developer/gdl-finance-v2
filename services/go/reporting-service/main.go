@@ -13,7 +13,10 @@ import (
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -141,6 +144,10 @@ func main() {
 		grpc.UnaryInterceptor(authInterceptor),
 	)
 	pb.RegisterReportingServiceServer(srv, &server{db: db})
+	healthServer := health.NewServer()
+	healthpb.RegisterHealthServer(srv, healthServer)
+	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+	reflection.Register(srv)
 
 	log.Printf("Reporting Service listening on :%s", port)
 	if err := srv.Serve(lis); err != nil {

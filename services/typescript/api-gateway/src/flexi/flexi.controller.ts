@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Req,
-  Param,
-  Patch,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, UseGuards } from '@nestjs/common';
 import { FlexiService } from './flexi.service';
 import { FastifyRequest } from 'fastify';
 import { AuthGuard } from '../common/guards/auth.guard';

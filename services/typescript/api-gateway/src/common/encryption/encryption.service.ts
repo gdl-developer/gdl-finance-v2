@@ -58,7 +58,7 @@ export class EncryptionService {
       decrypted += decipher.final('utf8');
 
       return JSON.parse(decrypted);
-    } catch (error) {
+    } catch {
       throw new Error('Insecure payload or decryption failure');
     }
   }

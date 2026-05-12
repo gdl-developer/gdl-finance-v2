@@ -179,7 +179,7 @@ export class UserService extends AbstractService {
       phonenumber: user.phone,
       firstname: user.first_name,
       lastname: user.last_name,
-      currency,
+      currency: user.currency,
     };
 
     const refresh_token = await this.signTempRefreshTokens(user, client_ip);
