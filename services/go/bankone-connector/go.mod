@@ -2,8 +2,6 @@ module github.com/gdl/bankone-connector
 
 go 1.26.2
 
-toolchain go1.24.13
-
 require (
 	github.com/joho/godotenv v1.5.1
 	github.com/segmentio/kafka-go v0.4.51

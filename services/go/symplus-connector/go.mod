@@ -2,8 +2,6 @@ module github.com/gdl/symplus-connector
 
 go 1.26.2
 
-toolchain go1.24.13
-
 replace github.com/gdl/symplus-connector/proto => ./proto
 
 require (

@@ -2,8 +2,6 @@ module github.com/gdl/symplus-service
 
 go 1.26.2
 
-toolchain go1.24.13
-
 require (
 	github.com/joho/godotenv v1.5.1
 	google.golang.org/grpc v1.80.0
