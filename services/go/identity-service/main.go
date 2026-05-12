@@ -27,12 +27,12 @@ type server struct {
 func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	user := User{
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Email:     req.Email,
-		PhoneNumber: req.PhoneNumber,
-		PasswordHash:  string(hashedPassword),
-		Status:    "ACTIVE",
+		FirstName:    req.FirstName,
+		LastName:     req.LastName,
+		Email:        req.Email,
+		PhoneNumber:  req.PhoneNumber,
+		PasswordHash: string(hashedPassword),
+		Status:       "ACTIVE",
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
@@ -85,9 +85,9 @@ func (s *server) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb
 	}
 
 	return &pb.GetProfileResponse{
+		Email:       user.Email,
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
-		Email:       user.Email,
 		PhoneNumber: user.PhoneNumber,
 		Status:      user.Status,
 		UserType:    user.AccountType,
@@ -107,7 +107,7 @@ func (s *server) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) (*pb
 	return &pb.CreateRoleResponse{Success: true, RoleId: fmt.Sprintf("%d", role.ID)}, nil
 }
 
-func (s *server) GetRoles(ctx context.Context, req *pb.Empty) (*pb.GetRolesResponse, error) {
+func (s *server) GetRoles(ctx context.Context, req *pb.GetRolesRequest) (*pb.GetRolesResponse, error) {
 	var roles []Role
 	s.db.Find(&roles)
 
@@ -285,11 +285,11 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 
 func (s *server) UpdateConsent(ctx context.Context, req *pb.UpdateConsentRequest) (*pb.UpdateConsentResponse, error) {
 	updates := map[string]interface{}{
-		"terms_accepted":           req.TermsAccepted,
+		"terms_accepted":          req.TermsAccepted,
 		"privacy_policy_accepted": req.PrivacyPolicyAccepted,
-		"marketing_consent":        req.MarketingConsent,
-		"policy_version":           req.PolicyVersion,
-		"consent_timestamp":        time.Now(),
+		"marketing_consent":       req.MarketingConsent,
+		"policy_version":          req.PolicyVersion,
+		"consent_timestamp":       time.Now(),
 	}
 
 	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Updates(updates).Error; err != nil {

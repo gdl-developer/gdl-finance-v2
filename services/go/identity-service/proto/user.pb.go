@@ -1984,6 +1984,7 @@ type LoginResponse struct {
 	RefreshToken  string                 `protobuf:"bytes,3,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
 	Requires_2Fa  bool                   `protobuf:"varint,4,opt,name=requires_2fa,json=requires2fa,proto3" json:"requires_2fa,omitempty"`
 	Message       string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	UserId        string                 `protobuf:"bytes,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2049,6 +2050,13 @@ func (x *LoginResponse) GetRequires_2Fa() bool {
 func (x *LoginResponse) GetMessage() string {
 	if x != nil {
 		return x.Message
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
 	}
 	return ""
 }
@@ -2216,6 +2224,8 @@ type GetProfileResponse struct {
 	LastName      string                 `protobuf:"bytes,3,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
 	PhoneNumber   string                 `protobuf:"bytes,4,opt,name=phone_number,json=phoneNumber,proto3" json:"phone_number,omitempty"`
 	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
+	UserType      string                 `protobuf:"bytes,6,opt,name=user_type,json=userType,proto3" json:"user_type,omitempty"`
+	Role          *RoleInfo              `protobuf:"bytes,7,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2283,6 +2293,20 @@ func (x *GetProfileResponse) GetStatus() string {
 		return x.Status
 	}
 	return ""
+}
+
+func (x *GetProfileResponse) GetUserType() string {
+	if x != nil {
+		return x.UserType
+	}
+	return ""
+}
+
+func (x *GetProfileResponse) GetRole() *RoleInfo {
+	if x != nil {
+		return x.Role
+	}
+	return nil
 }
 
 type ForgotPasswordRequest struct {
