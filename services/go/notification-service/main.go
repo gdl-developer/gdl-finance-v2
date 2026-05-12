@@ -17,8 +17,8 @@ func main() {
 		})
 	})
 
-	log.Println("Listening on :8083")
-	if err := http.ListenAndServe(":8083", nil); err != nil {
+	log.Println("Listening on :50056")
+	if err := http.ListenAndServe(":50056", nil); err != nil {
 		log.Fatal(err)
 	}
 }

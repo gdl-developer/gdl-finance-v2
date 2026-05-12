@@ -22,17 +22,19 @@ export class AuthGuard implements CanActivate {
     if (isPublic) {
       return true;
     }
+
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
       throw new UnauthorizedException();
     }
     try {
-      const payload: { user_id: string; role: string } =
-        await this.jwtService.verifyAsync(token, {
-          secret: 'your_secret_key',
-        });
-      request.user = payload;
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: process.env.JWT_SECRET || 'your_secret_key',
+      });
+      // 💡 We're assigning the payload to the request object here
+      // so that we can access it in our route handlers
+      request['user'] = payload;
     } catch {
       throw new UnauthorizedException();
     }
@@ -42,11 +44,10 @@ export class AuthGuard implements CanActivate {
   private extractTokenFromHeader(
     request: AuthenticatedRequest,
   ): string | undefined {
-    const authHeader = request.headers.authorization;
-    if (authHeader) {
-      const [type, token] = authHeader.split(' ');
-      if (type === 'Bearer') return token;
-    }
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    if (type === 'Bearer') return token;
+
+    // Fallback to Secure HttpOnly cookie
     return (request.cookies as Record<string, string>)['access_token'];
   }
 }

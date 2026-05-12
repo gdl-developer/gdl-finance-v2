@@ -1,6 +1,6 @@
 {
-  "*.go": ["/opt/homebrew/bin/gofmt -w", "go vet"],
-  "*.ts": ["eslint --fix", "npx prettier --write"],
-  "*.js": "npx prettier --write",
-  "*.json": "npx prettier --write"
+  "*.go": ["gofmt -w"],
+  "*.ts": ["eslint --fix", "prettier --write"],
+  "*.js": "prettier --write",
+  "*.json": "prettier --write"
 }

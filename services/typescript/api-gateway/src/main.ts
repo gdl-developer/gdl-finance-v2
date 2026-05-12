@@ -62,7 +62,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   await app.register(fastifyCookie as any, {
     secret: process.env.COOKIE_SECRET || 'secure-fintech-secret',
     parseOptions: {

@@ -115,15 +115,20 @@ jobs:
         run: |
           SERVICE_NAME="${{ matrix.service }}"
 
-          # Check Go services first
+          # Go services — build from services/go/ root so sibling deps (e.g. bankone-connector) resolve
           if [ -d "./services/go/$SERVICE_NAME" ]; then
-            docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging --build-arg SERVICE_DIR=$SERVICE_NAME -f ./services/go/$SERVICE_NAME/Dockerfile ./services/go
-          # Check TS services
+            docker build --platform linux/amd64 \
+              -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging \
+              --build-arg SERVICE_DIR=$SERVICE_NAME \
+              -f ./services/go/$SERVICE_NAME/Dockerfile \
+              ./services/go
+
+          # TypeScript services — build from REPO ROOT so proto/ directory is available in build context
           elif [ -d "./services/typescript/$SERVICE_NAME" ]; then
-            docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging ./services/typescript/$SERVICE_NAME
-          # Check root User-Service (now moved inside the repo)
-          elif [ "$SERVICE_NAME" == "user-service" ]; then
-            docker build --platform linux/amd64 -t registry.digitalocean.com/gdlfinancev2/user-service:staging ./services/typescript/user-service
+            docker build --platform linux/amd64 \
+              -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging \
+              -f ./services/typescript/$SERVICE_NAME/Dockerfile \
+              .
           fi
 
           docker push registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging
@@ -138,14 +143,28 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: "5m"
           script: |
-            mkdir -p /home/root/gdl-v2
-            cd /home/root/gdl-v2
-            # Log in and update
+            mkdir -p /root/gdl-v2
+            cd /root/gdl-v2
+
+            # Clone or update repo
+            if [ ! -f "docker-compose.staging.yml" ]; then
+              git clone https://github.com/gdl-developer/gdl-finance-v2.git .
+            else
+              git pull origin develop
+            fi
+
+            # Log in to registry
             doctl registry login
-            # Pull images from the registry
-            docker-compose -f docker-compose.staging.yml pull
-            # Start the hardened services
-            docker-compose -f docker-compose.staging.yml up -d
-            # Cleanup
-            docker image prune -f
+
+            # Run the full deployment sequence in the background
+            # Logs written to /root/deploy.log for debugging
+            nohup bash -c "
+              docker compose -f docker-compose.staging.yml down --remove-orphans &&
+              docker compose -f docker-compose.staging.yml pull &&
+              docker compose -f docker-compose.staging.yml up -d --build &&
+              docker image prune -f
+            " > /root/deploy.log 2>&1 &
+
+            echo "Deployment started in background. Check /root/deploy.log for status."

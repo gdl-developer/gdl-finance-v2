@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/segmentio/kafka-go"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -41,21 +42,31 @@ func startDataRetentionWorker(db *gorm.DB) {
 func main() {
 	godotenv.Load()
 
-	dsn := "host=" + os.Getenv("DB_HOST") + " user=" + os.Getenv("DB_USERNAME") + " password=" + os.Getenv("DB_PASSWORD") + " dbname=" + os.Getenv("DB_NAME") + " port=" + os.Getenv("DB_PORT") + " sslmode=require"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USERNAME")
+	dbPass := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=skip-verify",
+		dbUser, dbPass, dbHost, dbPort, dbName)
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
 	db.AutoMigrate(&AuditLog{})
 
-	// Start Data Retention Worker (Phase 2.3)
+	// Start Data Retention Worker
 	go startDataRetentionWorker(db)
 
 	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
 	if kafkaBrokers == "" {
-		kafkaBrokers = "localhost:9092"
+		kafkaBrokers = "kafka:29092"
 	}
+	log.Printf("Connecting to Kafka at: %s", kafkaBrokers)
+	log.Printf("Connecting to Kafka at: %s", kafkaBrokers)
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{kafkaBrokers},

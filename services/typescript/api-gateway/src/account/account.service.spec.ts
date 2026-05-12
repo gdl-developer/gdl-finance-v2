@@ -6,7 +6,15 @@ describe('AccountService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AccountService],
+      providers: [
+        AccountService,
+        {
+          provide: 'ACCOUNT_PACKAGE',
+          useValue: {
+            getService: jest.fn().mockReturnValue({}),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<AccountService>(AccountService);

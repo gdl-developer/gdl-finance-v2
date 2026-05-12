@@ -6,15 +6,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Connection, Not } from 'typeorm';
+import { Repository, Connection } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
-import {
-  CompanyUser,
-  CompanyUserRole,
-  CompanyUserStatus,
-} from './entities/company-user.entity';
+import { CompanyUser, CompanyUserStatus } from './entities/company-user.entity';
 import {
   CompanyUserAuthAction,
   AuthActionType,
@@ -62,7 +58,6 @@ export class CompanyUserService {
         createCompanyUserDto.phone,
       );
 
-      // Find company
       const company = await this.companyRepository.findOne({
         where: { id: companyId },
       });
@@ -70,11 +65,9 @@ export class CompanyUserService {
         throw new NotFoundException('Company not found');
       }
 
-      // Generate a temporary password
       const tempPassword = this.generateTempPassword();
       const hashedPassword = await this.hashPassword(tempPassword);
 
-      // Create the user
       const newUser = queryRunner.manager.create(CompanyUser, {
         firstName: createCompanyUserDto.firstName,
         lastName: createCompanyUserDto.lastName,
@@ -84,8 +77,6 @@ export class CompanyUserService {
         password: hashedPassword,
         role: createCompanyUserDto.role,
         approvalLevel: createCompanyUserDto.approvalLevel,
-        // position: createCompanyUserDto.position,
-        // department: createCompanyUserDto.department,
         company: company,
         status: CompanyUserStatus.PENDING,
         forcePasswordChange: true,
@@ -93,7 +84,6 @@ export class CompanyUserService {
 
       const savedUser = await queryRunner.manager.save(CompanyUser, newUser);
 
-      // Send verification email
       const { requestToken, requestOtp } = await this.createAuthAction(
         savedUser,
         AuthActionType.EMAIL_VERIFICATION,
@@ -102,7 +92,6 @@ export class CompanyUserService {
 
       await queryRunner.commitTransaction();
 
-      // Todo: Send email with temporary password and verification link
       console.log(`Temporary password for ${savedUser.email}: ${tempPassword}`);
       console.log(`Verification OTP: ${requestOtp}, Token: ${requestToken}`);
 
@@ -159,7 +148,6 @@ export class CompanyUserService {
   ): Promise<CompanyUser> {
     const user = await this.findOne(id);
 
-    // If email is being updated, check for uniqueness
     if (
       updateCompanyUserDto.email &&
       updateCompanyUserDto.email !== user.email
@@ -172,7 +160,6 @@ export class CompanyUserService {
       }
     }
 
-    // If phone is being updated, check for uniqueness
     if (
       updateCompanyUserDto.phone &&
       updateCompanyUserDto.phone !== user.phone
@@ -185,7 +172,6 @@ export class CompanyUserService {
       }
     }
 
-    // Update user
     Object.assign(user, updateCompanyUserDto);
     return this.companyUserRepository.save(user);
   }
@@ -206,7 +192,6 @@ export class CompanyUserService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check if account is locked
     if (
       user.isAccountLocked &&
       user.accountLockedUntil &&
@@ -221,7 +206,6 @@ export class CompanyUserService {
       );
     }
 
-    // Unlock account if lock period has expired
     if (
       user.isAccountLocked &&
       user.accountLockedUntil &&
@@ -247,14 +231,12 @@ export class CompanyUserService {
       user.password,
     );
     if (!isPasswordValid) {
-      // Increment failed login attempts
       user.failedLoginAttempts += 1;
       user.lastFailedLoginAttempt = new Date();
 
-      // Lock account after 3 failed attempts for 30 minutes
       if (user.failedLoginAttempts >= 3) {
         user.isAccountLocked = true;
-        user.accountLockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+        user.accountLockedUntil = new Date(Date.now() + 30 * 60 * 1000);
         await this.companyUserRepository.save(user);
         throw new UnauthorizedException(
           'Account locked due to too many failed login attempts. Please try again in 30 minutes.',
@@ -268,7 +250,6 @@ export class CompanyUserService {
       );
     }
 
-    // Reset failed login attempts on successful login
     user.failedLoginAttempts = 0;
     user.lastFailedLoginAttempt = null;
     user.isAccountLocked = false;
@@ -277,13 +258,11 @@ export class CompanyUserService {
     user.deviceHash = loginDto.deviceHash;
     await this.companyUserRepository.save(user);
 
-    // Generate tokens
     const { accessToken, refreshToken } = await this.generateTokens(
       user,
       clientIp,
     );
 
-    // Store refresh token
     user.refreshToken = refreshToken;
     await this.companyUserRepository.save(user);
 
@@ -316,12 +295,10 @@ export class CompanyUserService {
       throw new BadRequestException('Verification code has expired');
     }
 
-    // Mark action as used
     authAction.isUsed = true;
     authAction.usedAt = new Date();
     await this.authActionRepository.save(authAction);
 
-    // Update user
     const user = authAction.companyUser;
     user.emailVerified = true;
     if (user.status === CompanyUserStatus.PENDING) {
@@ -338,7 +315,6 @@ export class CompanyUserService {
     });
 
     if (!user) {
-      // Return fake token to prevent email enumeration
       return { requestToken: this.generateToken() };
     }
 
@@ -355,7 +331,6 @@ export class CompanyUserService {
 
       await queryRunner.commitTransaction();
 
-      // Todo: Send email with OTP
       console.log(`Password reset OTP: ${requestOtp}, Token: ${requestToken}`);
 
       return { requestToken };
@@ -389,12 +364,10 @@ export class CompanyUserService {
       throw new BadRequestException('Reset code has expired');
     }
 
-    // Mark action as used
     authAction.isUsed = true;
     authAction.usedAt = new Date();
     await this.authActionRepository.save(authAction);
 
-    // Update user password
     const user = authAction.companyUser;
     user.password = await this.hashPassword(createNewPasswordDto.newPassword);
     user.lastPasswordChange = new Date();
@@ -426,14 +399,11 @@ export class CompanyUserService {
     return this.companyUserRepository.save(user);
   }
 
-  // Transaction PIN methods
   async setTransactionPin(
     setTransactionPinDto: SetTransactionPinDto,
     userId: string,
   ): Promise<CompanyUser> {
     const user = await this.findOne(userId);
-
-    // Hash the PIN
     const pinString = setTransactionPinDto.pin.toString();
     const hashedPin = await this.hashPassword(pinString);
 
@@ -447,11 +417,9 @@ export class CompanyUserService {
     userId: string,
   ): Promise<boolean> {
     const user = await this.findOne(userId);
-
     if (!user.hasTransactionPin) {
       throw new BadRequestException('Transaction PIN not set');
     }
-
     const pinString = validatePinDto.pin.toString();
     return this.comparePasswords(pinString, user.transactionPin);
   }
@@ -461,13 +429,11 @@ export class CompanyUserService {
     userId: string,
   ): Promise<CompanyUser> {
     const user = await this.findOne(userId);
-
     if (user.email !== resetPinDto.email) {
       throw new UnauthorizedException(
         'You can only reset your own transaction PIN',
       );
     }
-
     const isPasswordValid = await this.comparePasswords(
       resetPinDto.password,
       user.password,
@@ -475,8 +441,6 @@ export class CompanyUserService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Password is incorrect');
     }
-
-    // Hash the new PIN
     const pinString = resetPinDto.newPin.toString();
     const hashedPin = await this.hashPassword(pinString);
 
@@ -485,7 +449,6 @@ export class CompanyUserService {
     return this.companyUserRepository.save(user);
   }
 
-  // Helper methods
   private async validateEmailAndPhone(
     email: string,
     phone: string,
@@ -496,7 +459,6 @@ export class CompanyUserService {
     if (existingEmail) {
       throw new ConflictException('Email already exists');
     }
-
     const existingPhone = await this.companyUserRepository.findOne({
       where: { phone },
     });
@@ -536,7 +498,7 @@ export class CompanyUserService {
     const requestToken = this.generateToken();
     const requestOtp = this.generateOtp();
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24); // Expires in 24 hours
+    expiresAt.setHours(expiresAt.getHours() + 24);
 
     const authAction = queryRunner
       ? queryRunner.manager.create(CompanyUserAuthAction, {
@@ -569,14 +531,9 @@ export class CompanyUserService {
     user: CompanyUser,
     clientIp: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const jwtSecret = process.env.JWT_SECRET;
-    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET;
-
-    if (!jwtSecret || !jwtRefreshSecret) {
-      throw new Error(
-        'JWT_SECRET and JWT_REFRESH_SECRET environment variables are required but not set',
-      );
-    }
+    const jwtSecret = process.env.JWT_SECRET || 'your_secret_key';
+    const jwtRefreshSecret =
+      process.env.JWT_REFRESH_SECRET || 'your_refresh_secret_key';
 
     const payload = {
       sub: user.id,
@@ -607,22 +564,16 @@ export class CompanyUserService {
     return sanitizedUser;
   }
 
-  /**
-   * Fetch all users of a specific company
-   */
   async getCompanyUsers(companyId: string): Promise<CompanyUser[]> {
-    // 1️⃣ Validate company exists
     const company = await this.companyRepository.findOne({
       where: { id: companyId },
     });
     if (!company) {
       throw new NotFoundException('Company not found');
     }
-
-    // 2️⃣ Fetch company users
     return this.companyUserRepository.find({
       where: { company: { id: companyId } },
-      relations: ['company'], // in case you want company details along with users
+      relations: ['company'],
     });
   }
 }

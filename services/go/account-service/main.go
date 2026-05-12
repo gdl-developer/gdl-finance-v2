@@ -16,12 +16,37 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
+// maskPII redacts sensitive info for logs
+func maskPII(input string) string {
+	if len(input) <= 4 {
+		return "****"
+	}
+	return input[:2] + "****" + input[len(input)-2:]
+}
+
+func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	secret := md["x-internal-secret"]
+	expectedSecret := os.Getenv("INTERNAL_SECURITY_KEY")
+
+	if len(secret) == 0 || secret[0] != expectedSecret {
+		log.Printf("Unauthorized internal access attempt to %s", info.FullMethod)
+		return nil, status.Errorf(codes.Unauthenticated, "invalid internal security key")
+	}
+
+	return handler(ctx, req)
+}
 
 type server struct {
 	pb.UnimplementedAccountServiceServer
@@ -80,9 +105,8 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 }
 
 func (s *server) InitializeCBAAccounts(ctx context.Context, req *pb.InitializeCBARequest) (*pb.InitializeCBAResponse, error) {
-	log.Printf("Initializing prioritized accounts for user: %s", req.UserId)
+	log.Printf("Initializing prioritized accounts for user: %s", maskPII(req.UserId))
 
-	// 1. Create BankOne Quick Account
 	bankoneResp, err := s.clients.BankOne.CreateAccountQuick(ctx, &bankone_pb.CreateAccountQuickRequest{
 		FirstName:   req.FirstName,
 		LastName:    req.LastName,
@@ -100,7 +124,6 @@ func (s *server) InitializeCBAAccounts(ctx context.Context, req *pb.InitializeCB
 		}
 	}
 
-	// 2. Save to Shadow Ledger
 	newAccount := Account{
 		UserID:           req.UserId,
 		BankOneAccount:   nuban,
@@ -122,47 +145,53 @@ func (s *server) InitializeCBAAccounts(ctx context.Context, req *pb.InitializeCB
 func (s *server) AcquireLock(ctx context.Context, req *pb.LockRequest) (*pb.LockResponse, error) {
 	duration := time.Duration(req.DurationSeconds) * time.Second
 	if duration == 0 {
-		duration = 30 * time.Second // Default
+		duration = 30 * time.Second
 	}
-
 	success, token := s.redis.AcquireLock(ctx, req.Key, duration)
-	return &pb.LockResponse{
-		Success: success,
-		Token:   token,
-	}, nil
+	return &pb.LockResponse{Success: success, Token: token}, nil
 }
 
 func (s *server) ReleaseLock(ctx context.Context, req *pb.UnlockRequest) (*pb.LockResponse, error) {
 	success := s.redis.ReleaseLock(ctx, req.Key, req.Token)
-	return &pb.LockResponse{
-		Success: success,
-	}, nil
+	return &pb.LockResponse{Success: success}, nil
 }
 
 func main() {
 	godotenv.Load()
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require",
-		os.Getenv("DB_HOST"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"), os.Getenv("DB_PORT"))
 
-	db, _ := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USERNAME")
+	dbPass := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=skip-verify",
+		dbUser, dbPass, dbHost, dbPort, dbName)
+
+	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	db.AutoMigrate(&Account{}, &BalanceSyncLog{}, &TransactionAuditLog{})
 
 	rdb := InitRedis()
 	go StartKafkaConsumer(db, rdb)
 	clients := InitClients()
 
-	lis, _ := net.Listen("tcp", ":50051")
-	s := grpc.NewServer()
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "50052"
+	}
 
-	// Register services
+	lis, _ := net.Listen("tcp", ":"+port)
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(authInterceptor),
+	)
+
 	pb.RegisterAccountServiceServer(s, &server{db: db, clients: clients, redis: rdb})
 
-	// Register Health Service
 	healthServer := health.NewServer()
 	healthpb.RegisterHealthServer(s, healthServer)
 	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
 	reflection.Register(s)
+	log.Printf("Account Service listening on :%s", port)
 	s.Serve(lis)
 }

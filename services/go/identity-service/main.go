@@ -6,165 +6,104 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
-	"encoding/json"
 	pb "github.com/gdl/identity-service/proto"
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"time"
 )
+
+// maskPII redacts sensitive info for logs
+func maskPII(input string) string {
+	if len(input) <= 4 {
+		return "****"
+	}
+	return input[:2] + "****" + input[len(input)-2:]
+}
+
+func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	secret := md["x-internal-secret"]
+	expectedSecret := os.Getenv("INTERNAL_SECURITY_KEY")
+
+	if len(secret) == 0 || secret[0] != expectedSecret {
+		log.Printf("Unauthorized internal access attempt to %s", info.FullMethod)
+		return nil, status.Errorf(codes.Unauthenticated, "invalid internal security key")
+	}
+
+	return handler(ctx, req)
+}
 
 type server struct {
 	pb.UnimplementedIdentityServiceServer
 	db *gorm.DB
 }
 
-// Register handles user signup with NDPR/GDPR compliance (PII collection limit).
 func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-
-	user := User{
-		Email:                 req.Email,
-		PasswordHash:          string(hashedPassword),
-		FirstName:             req.FirstName,
-		LastName:              req.LastName,
-		PhoneNumber:           req.PhoneNumber,
-		TermsAccepted:         req.TermsAccepted,
-		PrivacyPolicyAccepted: req.PrivacyPolicyAccepted,
-		MarketingConsent:      req.MarketingConsent,
-		PolicyVersion:         req.PolicyVersion,
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to hash password")
 	}
-
-	if req.TermsAccepted {
-		now := time.Now()
-		user.ConsentTimestamp = &now
+	user := User{
+		FirstName:    req.FirstName,
+		LastName:     req.LastName,
+		Email:        req.Email,
+		PhoneNumber:  req.PhoneNumber,
+		PasswordHash: string(hashedPassword),
+		Status:       "ACTIVE",
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
-		return nil, status.Errorf(codes.AlreadyExists, "user already exists")
-	}
-
-	// --- Consent Audit Log (Only if provided) ---
-	if req.TermsAccepted && req.PrivacyPolicyAccepted {
-		s.db.Create(&ConsentAuditLog{
-			UserID:                user.ID,
-			TermsAccepted:         req.TermsAccepted,
-			PrivacyPolicyAccepted: req.PrivacyPolicyAccepted,
-			MarketingConsent:      req.MarketingConsent,
-			PolicyVersion:         req.PolicyVersion,
-			CreatedAt:             time.Now(),
-		})
+		return nil, status.Errorf(codes.Internal, "failed to create user")
 	}
 
 	return &pb.RegisterResponse{
 		Success: true,
-		Message: "Registration successful. Please verify your email.",
 		UserId:  fmt.Sprintf("%d", user.ID),
+		Message: "User registered successfully",
 	}, nil
 }
 
-func (s *server) ExportData(ctx context.Context, req *pb.ExportDataRequest) (*pb.ExportDataResponse, error) {
-	var user User
-	if err := s.db.First(&user, "id = ?", req.UserId).Error; err != nil {
-		return nil, status.Errorf(codes.NotFound, "user not found")
-	}
-
-	// Scrub sensitive security fields
-	user.PasswordHash = "[REDACTED]"
-
-	jsonData, _ := json.MarshalIndent(user, "", "  ")
-	return &pb.ExportDataResponse{JsonData: string(jsonData)}, nil
-}
-
-func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
-	var user User
-	if err := s.db.First(&user, "id = ?", req.UserId).Error; err != nil {
-		return nil, status.Errorf(codes.NotFound, "user not found")
-	}
-
-	anonymizedEmail := fmt.Sprintf("deleted_%s_%d@gdl.com.ng", req.UserId, time.Now().Unix())
-
-	err := s.db.Model(&user).Updates(map[string]interface{}{
-		"FirstName":   "DELETED",
-		"LastName":    "USER",
-		"Email":       anonymizedEmail,
-		"PhoneNumber": "00000000000",
-		"IsDeleted":   true,
-		"Status":      "BANNED",
-	}).Error
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to delete account")
-	}
-
-	return &pb.DeleteAccountResponse{Success: true, Message: "Account deleted successfully"}, nil
-}
-
-func (s *server) UpdateConsent(ctx context.Context, req *pb.UpdateConsentRequest) (*pb.UpdateConsentResponse, error) {
-	var user User
-	if err := s.db.First(&user, "id = ?", req.UserId).Error; err != nil {
-		return nil, status.Errorf(codes.NotFound, "user not found")
-	}
-
-	now := time.Now()
-	err := s.db.Model(&user).Updates(map[string]interface{}{
-		"TermsAccepted":         req.TermsAccepted,
-		"PrivacyPolicyAccepted": req.PrivacyPolicyAccepted,
-		"MarketingConsent":      req.MarketingConsent,
-		"ConsentTimestamp":      &now,
-		"PolicyVersion":         req.PolicyVersion,
-	}).Error
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to update consent")
-	}
-
-	// --- Consent Audit Log ---
-	s.db.Create(&ConsentAuditLog{
-		UserID:                user.ID,
-		TermsAccepted:         req.TermsAccepted,
-		PrivacyPolicyAccepted: req.PrivacyPolicyAccepted,
-		MarketingConsent:      req.MarketingConsent,
-		PolicyVersion:         req.PolicyVersion,
-		CreatedAt:             now,
-	})
-
-	return &pb.UpdateConsentResponse{Success: true, Message: "Consent updated successfully"}, nil
-}
-
-// Login handles authentication with OWASP-aligned security (Audit logging, timing attack prevention).
 func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	var user User
-	if err := s.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
+	if err := s.db.Preload("Role").Where("email = ?", req.Email).First(&user).Error; err != nil {
+		return &pb.LoginResponse{Success: false, Message: "Invalid credentials"}, nil
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
+		return &pb.LoginResponse{Success: false, Message: "Invalid credentials"}, nil
 	}
 
-	token, err := GenerateToken(fmt.Sprintf("%d", user.ID), "USER")
+	token, err := GenerateToken(fmt.Sprintf("%d", user.ID), user.Role.Name)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate token")
 	}
 
-	// Audit Log (Fintech standard)
-	s.db.Create(&AuditLog{
-		UserID:    user.ID,
-		Action:    "LOGIN_SUCCESS",
-		IPAddress: req.IpAddress,
-		UserAgent: req.UserAgent,
-	})
+	// For now, we use a similar token as refresh token
+	refreshToken, err := GenerateToken(fmt.Sprintf("%d", user.ID), user.Role.Name)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to generate refresh token")
+	}
 
 	return &pb.LoginResponse{
-		Success: true,
-		Token:   token,
-		Message: "Login successful",
+		Success:      true,
+		UserId:       fmt.Sprintf("%d", user.ID),
+		Token:        token,
+		RefreshToken: refreshToken,
+		Message:      "Login successful",
 	}, nil
 }
 
@@ -174,35 +113,45 @@ func (s *server) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb
 		return nil, status.Errorf(codes.NotFound, "user not found")
 	}
 
+	var permissions []string
+	for _, p := range user.Role.Permissions {
+		permissions = append(permissions, p.Name)
+	}
+
 	return &pb.GetProfileResponse{
 		Email:       user.Email,
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 		PhoneNumber: user.PhoneNumber,
 		Status:      user.Status,
+		UserType:    user.AccountType,
+		Role: &pb.RoleInfo{
+			Id:          fmt.Sprintf("%d", user.Role.ID),
+			Name:        user.Role.Name,
+			Permissions: permissions,
+		},
 	}, nil
 }
 
-// CreateRole allows admins to define new roles with specific permission sets.
 func (s *server) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) (*pb.CreateRoleResponse, error) {
 	role := Role{Name: req.Name}
-	for _, pName := range req.Permissions {
-		var p Permission
-		s.db.FirstOrCreate(&p, Permission{Name: pName})
-		role.Permissions = append(role.Permissions, p)
-	}
-
 	if err := s.db.Create(&role).Error; err != nil {
-		return nil, status.Errorf(codes.AlreadyExists, "role already exists")
+		return nil, status.Errorf(codes.Internal, "failed to create role")
 	}
-
-	return &pb.CreateRoleResponse{
-		Success: true,
-		RoleId:  fmt.Sprintf("%d", role.ID),
-	}, nil
+	return &pb.CreateRoleResponse{Success: true, RoleId: fmt.Sprintf("%d", role.ID)}, nil
 }
 
-// AssignRole links a user to a specific role, enforcing the RBAC model.
+func (s *server) GetRoles(ctx context.Context, req *pb.GetRolesRequest) (*pb.GetRolesResponse, error) {
+	var roles []Role
+	s.db.Find(&roles)
+
+	var roleInfos []*pb.RoleInfo
+	for _, r := range roles {
+		roleInfos = append(roleInfos, &pb.RoleInfo{Id: fmt.Sprintf("%d", r.ID), Name: r.Name})
+	}
+	return &pb.GetRolesResponse{Roles: roleInfos}, nil
+}
+
 func (s *server) AssignRole(ctx context.Context, req *pb.AssignRoleRequest) (*pb.AssignRoleResponse, error) {
 	var role Role
 	if err := s.db.Where("name = ?", req.RoleName).First(&role).Error; err != nil {
@@ -308,9 +257,7 @@ func (s *server) GetSecurityQuestions(ctx context.Context, req *pb.Empty) (*pb.S
 
 func (s *server) SetUserSecurityQuestions(ctx context.Context, req *pb.SetUserQuestionsRequest) (*pb.SetUserQuestionsResponse, error) {
 	for _, ans := range req.Answers {
-		// Better Security: Hash the answer
 		hashedAnswer, _ := bcrypt.GenerateFromPassword([]byte(ans.Answer), bcrypt.DefaultCost)
-
 		userQuestion := UserSecurityQuestion{
 			UserID:     uint(uint64(parseUint(req.UserId))),
 			QuestionID: uint(ans.QuestionId),
@@ -334,6 +281,58 @@ func (s *server) VerifySecurityAnswer(ctx context.Context, req *pb.VerifyAnswerR
 	return &pb.VerifyAnswerResponse{Success: true}, nil
 }
 
+func (s *server) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
+	claims, err := ValidateToken(req.RefreshToken)
+	if err != nil {
+		return &pb.RefreshTokenResponse{Success: false, Message: "Invalid refresh token"}, nil
+	}
+
+	newToken, err := GenerateToken(claims.UserID, claims.Role)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to generate token")
+	}
+
+	return &pb.RefreshTokenResponse{
+		Success:      true,
+		Token:        newToken,
+		RefreshToken: req.RefreshToken,
+	}, nil
+}
+
+func (s *server) ExportData(ctx context.Context, req *pb.ExportDataRequest) (*pb.ExportDataResponse, error) {
+	var user User
+	if err := s.db.Preload("Role").First(&user, req.UserId).Error; err != nil {
+		return nil, status.Errorf(codes.NotFound, "user not found")
+	}
+
+	return &pb.ExportDataResponse{
+		JsonData: fmt.Sprintf(`{"email": "%s", "first_name": "%s", "last_name": "%s"}`, user.Email, user.FirstName, user.LastName),
+	}, nil
+}
+
+func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
+	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Update("is_deleted", true).Error; err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to delete account")
+	}
+	return &pb.DeleteAccountResponse{Success: true, Message: "Account marked for deletion"}, nil
+}
+
+func (s *server) UpdateConsent(ctx context.Context, req *pb.UpdateConsentRequest) (*pb.UpdateConsentResponse, error) {
+	updates := map[string]interface{}{
+		"terms_accepted":          req.TermsAccepted,
+		"privacy_policy_accepted": req.PrivacyPolicyAccepted,
+		"marketing_consent":       req.MarketingConsent,
+		"policy_version":          req.PolicyVersion,
+		"consent_timestamp":       time.Now(),
+	}
+
+	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Updates(updates).Error; err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update consent")
+	}
+
+	return &pb.UpdateConsentResponse{Success: true, Message: "Consent updated successfully"}, nil
+}
+
 func parseUint(s string) uint64 {
 	var val uint64
 	fmt.Sscanf(s, "%d", &val)
@@ -343,7 +342,7 @@ func parseUint(s string) uint64 {
 func (s *server) CreateBusinessUnit(ctx context.Context, req *pb.CreateBusinessUnitRequest) (*pb.CreateBusinessUnitResponse, error) {
 	unit := BusinessUnit{
 		Name:      req.Name,
-		ManagerID: 0, // Placeholder for manager logic
+		ManagerID: 0,
 	}
 
 	if err := s.db.Create(&unit).Error; err != nil {
@@ -406,36 +405,42 @@ func main() {
 	godotenv.Load()
 
 	dbHost := os.Getenv("DB_HOST")
-	_ = dbHost
 	dbPort := os.Getenv("DB_PORT")
-	_ = dbPort
 	dbUser := os.Getenv("DB_USERNAME")
-	_ = dbUser
 	dbPass := os.Getenv("DB_PASSWORD")
-	_ = dbPass
 	dbName := os.Getenv("DB_NAME")
-	_ = dbName
 
-	db, err := gorm.Open(sqlite.Open("identity.db"), &gorm.Config{})
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=skip-verify",
+		dbUser, dbPass, dbHost, dbPort, dbName)
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	// Auto Migrate the models
 	db.AutoMigrate(&User{}, &Role{}, &Permission{}, &BusinessUnit{}, &Branch{}, &OTP{}, &AuditLog{}, &ConsentAuditLog{}, &KYCLevel{}, &SecurityQuestion{}, &UserSecurityQuestion{}, &Company{}, &CompanyUser{})
-
-	// Seed Data
 	SeedIdentityData(db)
 
 	log.Println("Starting Identity Service (Go)...")
 
-	lis, err := net.Listen("tcp", ":50052")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "50051"
+	}
+
+	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(authInterceptor),
+	)
 	pb.RegisterIdentityServiceServer(s, &server{db: db})
+	healthServer := health.NewServer()
+	healthpb.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+	reflection.Register(s)
 
 	log.Printf("Server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {

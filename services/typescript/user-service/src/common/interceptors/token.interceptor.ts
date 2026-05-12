@@ -3,7 +3,6 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
-  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
@@ -22,7 +21,7 @@ export class TokenInterceptor implements NestInterceptor {
     const refreshToken = this.getTokenFromHeaders(request);
 
     if (!refreshToken) {
-      this.logger.warn('⚠️ No bearerAuth token found in request headers');
+      this.logger.warn('⚠️ No token found in request headers');
     } else {
       // Store the token in the request object for later access
       request['refreshToken'] = refreshToken;
@@ -38,9 +37,9 @@ export class TokenInterceptor implements NestInterceptor {
 
     // Support both 'bearerauth' and 'BearerAuth' just in case
     const token =
+      headers['authorization'] ||
       headers['bearerauth'] ||
-      headers['BearerAuth'] ||
-      headers['authorization'];
+      headers['BearerAuth'];
 
     if (!token) return null;
 

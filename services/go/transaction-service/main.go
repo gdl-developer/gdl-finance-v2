@@ -16,8 +16,42 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
+
+// maskPII redacts sensitive info for logs
+func maskPII(input string) string {
+	if len(input) <= 4 {
+		return "****"
+	}
+	return input[:2] + "****" + input[len(input)-2:]
+}
+
+func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	secret := md["x-internal-secret"]
+	expectedSecret := os.Getenv("INTERNAL_SECURITY_KEY")
+
+	if len(secret) == 0 || secret[0] != expectedSecret {
+		log.Printf("Unauthorized internal access attempt to %s", info.FullMethod)
+		return nil, status.Errorf(codes.Unauthenticated, "invalid internal security key")
+	}
+
+	return handler(ctx, req)
+}
+
+// withInternalAuth adds the internal security key to the context metadata
+func withInternalAuth(ctx context.Context) context.Context {
+	return metadata.AppendToOutgoingContext(ctx, "x-internal-secret", os.Getenv("INTERNAL_SECURITY_KEY"))
+}
 
 type server struct {
 	pb.UnimplementedTransactionServiceServer
@@ -27,7 +61,9 @@ type server struct {
 }
 
 func (s *server) TransferBank(ctx context.Context, req *pb.BankTransferRequest) (*pb.TransferResponse, error) {
-	log.Printf("Bank transfer request from %s: %f to %s", req.FromUserId, req.Amount, req.AccountNumber)
+	log.Printf("Bank transfer request from %s: %f to %s", maskPII(req.FromUserId), req.Amount, maskPII(req.AccountNumber))
+
+	ctx = withInternalAuth(ctx)
 
 	// 1. SECURE: Verify Transaction PIN (MFA)
 	pinResp, err := s.identity.VerifyPIN(ctx, &identity_pb.VerifyPINRequest{
@@ -106,7 +142,9 @@ func (s *server) TransactionStatusQuery(ctx context.Context, req *pb.TSQRequest)
 }
 
 func (s *server) TransferInternal(ctx context.Context, req *pb.TransferRequest) (*pb.TransferResponse, error) {
-	log.Printf("Internal transfer from %s to %s: %f", req.FromUserId, req.ToAccount, req.Amount)
+	log.Printf("Internal transfer from %s to %s: %f", maskPII(req.FromUserId), maskPII(req.ToAccount), req.Amount)
+
+	ctx = withInternalAuth(ctx)
 
 	// 1. SECURE: Verify Transaction PIN
 	pinResp, err := s.identity.VerifyPIN(ctx, &identity_pb.VerifyPINRequest{
@@ -137,6 +175,7 @@ func (s *server) GetBankList(ctx context.Context, req *pb.Empty) (*pb.BankListRe
 }
 
 func (s *server) AccountEnquiry(ctx context.Context, req *pb.EnquiryRequest) (*pb.EnquiryResponse, error) {
+	ctx = withInternalAuth(ctx)
 	resp, err := s.bankone.AccountEnquiry(ctx, &bankone_pb.AccountEnquiryRequest{
 		AccountNumber: req.AccountNumber,
 	})
@@ -154,19 +193,31 @@ func main() {
 	godotenv.Load()
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "50057"
+		port = "50060"
 	}
 
 	// Connect to Identity Service
-	connID, _ := grpc.Dial("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	identityUrl := os.Getenv("IDENTITY_SERVICE_URL")
+	if identityUrl == "" {
+		identityUrl = "localhost:50051"
+	}
+	connID, _ := grpc.Dial(identityUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	identityClient := identity_pb.NewIdentityServiceClient(connID)
 
 	// Connect to Account Service
-	connAcc, _ := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	accountUrl := os.Getenv("ACCOUNT_SERVICE_URL")
+	if accountUrl == "" {
+		accountUrl = "localhost:50052"
+	}
+	connAcc, _ := grpc.Dial(accountUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	accountClient := account_pb.NewAccountServiceClient(connAcc)
 
 	// Connect to BankOne Connector
-	connBankone, _ := grpc.Dial("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	bankoneUrl := os.Getenv("BANKONE_SERVICE_ADDR")
+	if bankoneUrl == "" {
+		bankoneUrl = "localhost:50054"
+	}
+	connBankone, _ := grpc.Dial(bankoneUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	bankoneClient := bankone_pb.NewBankOneServiceClient(connBankone)
 
 	lis, err := net.Listen("tcp", ":"+port)
@@ -174,12 +225,18 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(authInterceptor),
+	)
 	pb.RegisterTransactionServiceServer(s, &server{
 		identity: identityClient,
 		account:  accountClient,
 		bankone:  bankoneClient,
 	})
+	healthServer := health.NewServer()
+	healthpb.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+	reflection.Register(s)
 
 	log.Printf("Transaction Service listening on :%s", port)
 	if err := s.Serve(lis); err != nil {

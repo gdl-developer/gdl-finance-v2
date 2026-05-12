@@ -10,11 +10,11 @@ import (
 // Fintech Standard: CBN Tiered KYC compliance.
 type KYCLevel struct {
 	ID           uint    `gorm:"primaryKey"`
-	Level        int     `gorm:"uniqueIndex"` // 1, 2, 3
-	Name         string  `json:"name"`        // BRONZE, SILVER, GOLD
+	Level        int     `gorm:"uniqueIndex"`                           // 1, 2, 3
+	Name         string  `gorm:"type:varchar(50);not null" json:"name"` // BRONZE, SILVER, GOLD
 	DailyLimit   float64 `json:"daily_limit"`
 	MaxBalance   float64 `json:"max_balance"`
-	Requirements string  `json:"requirements"` // JSON string of required docs
+	Requirements string  `gorm:"type:text" json:"requirements"` // JSON string of required docs
 }
 
 // UserSecurityQuestion stores a user's specific answers to security challenges.
@@ -28,9 +28,9 @@ type UserSecurityQuestion struct {
 }
 
 type SecurityQuestion struct {
-	ID        uint   `gorm:"primaryKey"`
-	Question  string `gorm:"uniqueIndex"`
-	CreatedAt time.Time
+	ID        uint      `gorm:"primaryKey"`
+	Question  string    `gorm:"type:varchar(255);uniqueIndex;not null"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // User represents the core user account in the system.
@@ -103,17 +103,17 @@ type CompanyUser struct {
 
 type Role struct {
 	ID          uint         `gorm:"primaryKey" json:"id"`
-	Name        string       `gorm:"uniqueIndex;not null" json:"name"` // ADMIN, USER, COMPLIANCE
+	Name        string       `gorm:"type:varchar(100);uniqueIndex;not null" json:"name"` // ADMIN, USER, COMPLIANCE
 	Permissions []Permission `gorm:"many2many:role_permissions;" json:"permissions"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	CreatedAt   time.Time    `json:"created_at"`
+	UpdatedAt   time.Time    `json:"updated_at"`
 }
 
 type Permission struct {
-	ID          uint   `gorm:"primaryKey" json:"id"`
-	Name        string `gorm:"uniqueIndex;not null" json:"name"` // USER_CREATE, ACCOUNT_VIEW
-	Description string `json:"description"`
-	CreatedAt   time.Time
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Name        string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"name"` // USER_CREATE, ACCOUNT_VIEW
+	Description string    `gorm:"type:varchar(255)" json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type BusinessUnit struct {

@@ -209,10 +209,10 @@ export abstract class AbstractService {
       ? (start_date = new Date(startDate).toISOString())
       : (start_date = default_start);
 
-    const defualt_end = await this.defaultEndDate();
+    const default_end = await this.defaultEndDate();
     endDate
       ? (end_date = new Date(endDate).toISOString())
-      : (end_date = defualt_end);
+      : (end_date = default_end);
 
     return { start_date, end_date };
   }

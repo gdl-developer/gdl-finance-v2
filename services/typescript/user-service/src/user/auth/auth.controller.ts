@@ -10,19 +10,19 @@ import {
   Param,
   Res,
   UseGuards,
-  HttpCode,
-  HttpStatus,
-  UsePipes,
-  ValidationPipe,
   UnauthorizedException,
   ClassSerializerInterceptor,
   UseInterceptors,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Request, Response } from 'express';
+import { getClientIp } from 'request-ip';
 import { AuthService } from './auth.service';
 import { HowYouHeardAboutUs, UserAccount } from '../user/entities/user.entity';
 import { LoginDto } from './dto/login-dto';
 import { RegisterDto } from './dto/register.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ValidateTokenDto } from './dto/validate-token.dto';
 import { TokenVerifyActionDto } from './dto/forgot-password-action.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -34,8 +34,6 @@ import { SetTempLoginDto } from './dto/set-temp-login.dto';
 import { LoginWithhTempPinDto } from './dto/login-with-temp-pin.dto';
 import { AuditLogger } from 'src/common/audit-logger/utils/audit-log.decorator';
 import { AdminRegisterUserDto } from './dto/admin-register-user.dto';
-import { Request, Response } from 'express';
-import { getClientIp } from 'request-ip';
 import { CheckAbilities } from 'src/common/casl-ability-rbac/abilities.decorator';
 import { AbilitiesGuard } from 'src/common/casl-ability-rbac/abilities.guard';
 import { Action } from 'src/common/casl-ability-rbac/ability.factory';
@@ -106,12 +104,14 @@ export class AuthController {
     const client_ip = getClientIp(req);
     const { email, password } = loginDto;
 
+    const deviceId = req.headers['x-device-id'] as string;
+
     const deviceData = {
       browserName: loginDto.browserName,
       userAgent: loginDto.userAgent,
       os: loginDto.os,
       platform: loginDto.platform,
-      deviceHash: loginDto.device_hash,
+      deviceHash: deviceId || loginDto.device_hash,
     };
 
     const result = await this.authService.login(
@@ -166,7 +166,7 @@ export class AuthController {
         sameSite: 'strict',
       });
 
-      res.cookie('bearerauth', refresh_token, {
+      res.cookie('refresh_token', refresh_token, {
         httpOnly: true,
         secure: true,
         maxAge: 15 * 60 * 1000,
@@ -200,6 +200,12 @@ export class AuthController {
     @Res() res: Response,
   ) {
     const client_ip = getClientIp(req);
+    const deviceId = req.headers['x-device-id'] as string;
+
+    // Override device_hash from dto with x-device-id if present
+    if (deviceId) {
+      dto.device_hash = deviceId;
+    }
 
     const result = await this.authService.verifyLoginOtp(dto, client_ip);
 
@@ -214,7 +220,7 @@ export class AuthController {
     });
 
     // Set refresh token as HTTP-only cookie
-    res.cookie('bearerauth', refresh_token, {
+    res.cookie('refresh_token', refresh_token, {
       httpOnly: true,
       secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -395,14 +401,7 @@ export class AuthController {
     };
   }
 
-  // @Post('validate/t/pin')
-  // @AuditLogger('ValidateTxnPin')
-  // async validateTxnPin(@Body() validateTxnPinDto: ValidateTxnPinDto) {
-  //   const v_res = await this.authService.validateUserTxnPin(validateTxnPinDto);
-  //   return { success: true, data: v_res };
-  // }
-
-  @Post('refresh')
+  @Post('refresh-token')
   @ApiOperation({ summary: 'Refresh Access Token' })
   @ApiResponse({
     status: 200,
@@ -416,7 +415,7 @@ export class AuthController {
   ) {
     const client_ip = getClientIp(req);
     // Support getting token from body or cookie
-    const token = body.refresh_token || req.cookies['bearerauth'];
+    const token = body.refresh_token || req.cookies['refresh_token'];
 
     if (!token) {
       throw new UnauthorizedException('Refresh token is required');
@@ -434,7 +433,7 @@ export class AuthController {
     });
 
     // Set new refresh token as HTTP-only cookie
-    res.cookie('bearerauth', refresh_token, {
+    res.cookie('refresh_token', refresh_token, {
       httpOnly: true,
       secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -446,7 +445,10 @@ export class AuthController {
       status_code: 200,
       response_code: '00',
       response_description: 'Tokens refreshed successfully',
-      data: result,
+      data: {
+        token: access_token,
+        refresh_token: refresh_token,
+      },
     });
     return;
   }

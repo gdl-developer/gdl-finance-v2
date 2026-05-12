@@ -5,9 +5,11 @@ import * as crypto from 'crypto';
 import * as dotenv from 'dotenv'; // Load environment variables
 dotenv.config();
 
-const ACCESS_AUTH = process.env.ACCESS_AUTH;
+const ACCESS_AUTH = process.env.ACCESS_AUTH || 'your_access_auth_secret';
+const REFRESH_AUTH = process.env.REFRESH_AUTH || 'your_refresh_auth_secret';
 const IV_LENGTH = 16; // AES block size for CBC mode
-const ENCRYPTION_KEY = process.env.PAYLOAD_ENCRYPTION_SECRET;
+const ENCRYPTION_KEY =
+  process.env.PAYLOAD_ENCRYPTION_SECRET || 'your_payload_encryption_secret_32'; // Must be 32 bytes for aes-256
 
 @Injectable()
 export class JwtAuthUtilsService {
@@ -18,193 +20,159 @@ export class JwtAuthUtilsService {
   // AES-256-CBC Encryption
   encryptPayload(payload: Record<string, unknown>): string {
     const iv = crypto.randomBytes(IV_LENGTH); // Generate a random IV
-    const cipher = crypto.createCipheriv(
-      'aes-256-cbc',
-      Buffer.from(ENCRYPTION_KEY),
-      iv,
-    );
-    let encrypted = cipher.update(JSON.stringify(payload));
-    encrypted = Buffer.concat([encrypted, cipher.final()]);
-    return iv.toString('hex') + ':' + encrypted.toString('hex'); // Concatenate IV and encrypted data
+    const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest(); // Ensure 32 bytes
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    let encrypted = cipher.update(JSON.stringify(payload), 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return iv.toString('hex') + ':' + encrypted;
   }
 
   // AES-256-CBC Decryption
-  decryptPayload(encryptedPayload: string): Record<string, any> {
-    const [iv, encryptedData] = encryptedPayload.split(':');
-    const decipher = crypto.createDecipheriv(
-      'aes-256-cbc',
-      Buffer.from(ENCRYPTION_KEY),
-      Buffer.from(iv, 'hex'),
-    );
-    let decrypted = decipher.update(Buffer.from(encryptedData, 'hex'));
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
-    return JSON.parse(decrypted.toString());
-  }
-
-  // Generate a unique fingerprint based on user and IP
-  generateFingerprint(user_email: string, client_ip: string): string {
-    const userAgent = user_email + client_ip; // Use a combination of user-specific and client-specific data
-    return crypto.createHash('sha256').update(userAgent).digest('hex');
-  }
-
-  // Validate the fingerprint to prevent token replay
-  validateFingerprint(fingerprint: string, username: string, clientIp: string) {
-    const expectedFingerprint = this.generateFingerprint(username, clientIp);
-    if (expectedFingerprint !== fingerprint) {
-      throw new Error('Not Allowed. Fingerprint mismatch!');
+  decryptPayload(encryptedData: string): Record<string, unknown> {
+    const [ivHex, encryptedText] = encryptedData.split(':');
+    if (!ivHex || !encryptedText) {
+      throw new Error('Invalid encrypted data format');
     }
+
+    const iv = Buffer.from(ivHex, 'hex');
+    const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest(); // Ensure 32 bytes
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return JSON.parse(decrypted);
   }
 
-  // 5. Verify the JTI for replay protection
-  checkIfJtiUsed(jti: string): boolean {
-    // Cleanup expired JTIs before each check
-    this.cleanupExpiredJtis();
+  /**
+   * Generates a stateless JWE-like encrypted token
+   * @param payload User data to encode
+   * @param expiresIn Expiration time (e.g., '1h', '7d')
+   */
+  async generateEncryptedToken(
+    payload: Record<string, any>,
+    expiresIn = '1h',
+  ): Promise<string> {
+    // 1. Encrypt sensitive payload
+    const encryptedPayload = this.encryptPayload(payload);
 
-    return this.usedJtis.has(jti);
-  }
-
-  // 6. Mark the JTI as used and store expiration time
-  markJtiAsUsed(jti: string, exp: number): void {
-    this.usedJtis.set(jti, exp); // Store JTI with its expiration time
-  }
-
-  // Clear used JTIs (for cleanup purposes or testing)
-  clearUsedJtis(): void {
-    this.usedJtis.clear();
-  }
-
-  // Cleanup method to remove expired JTIs
-  private cleanupExpiredJtis() {
-    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
-
-    // Iterate through the JTIs and remove the ones that have expired
-    for (const [jti, exp] of this.usedJtis.entries()) {
-      if (exp < currentTime) {
-        this.usedJtis.delete(jti); // Remove expired JTI
-      }
-    }
-  }
-
-  async jwTSign(
-    encryptedPayload: string,
-    SIGN_KEY: string,
-    expiresIn?: string,
-  ) {
-    const token = this.jwtService.sign(
+    // 2. Sign with JWT
+    return this.jwtService.sign(
       { data: encryptedPayload },
       {
-        algorithm: 'HS256',
-        expiresIn: expiresIn || '5m',
-        secret: SIGN_KEY,
+        secret: ACCESS_AUTH,
+        expiresIn,
+        jwtid: crypto.randomBytes(16).toString('hex'),
       },
     );
-
-    return token;
   }
 
-  // Middleware to verify and handle tokens securely (integrated into the app)
+  /**
+   * Decodes and decrypts a stateless token
+   * @param token The JWT string
+   */
+  async decodeEncryptedToken(token: string): Promise<Record<string, any>> {
+    try {
+      // 1. Verify and decode JWT
+      const decoded = await this.jwtService.verifyAsync(token, {
+        secret: ACCESS_AUTH,
+      });
+
+      if (!decoded.data) {
+        throw new NotAcceptableException('Invalid token structure');
+      }
+
+      // 2. Anti-replay check (Optional: check JTI)
+      if (this.usedJtis.has(decoded.jti)) {
+        throw new NotAcceptableException('Token has already been used');
+      }
+
+      // 3. Decrypt payload
+      return this.decryptPayload(decoded.data);
+    } catch (error) {
+      throw new NotAcceptableException('Invalid or expired token');
+    }
+  }
+
+  /**
+   * Generates a device/user fingerprint to prevent token replay
+   */
+  generateFingerprint(identifier: string, ip: string): string {
+    return crypto
+      .createHash('sha256')
+      .update(`${identifier}-${ip}`)
+      .digest('hex');
+  }
+
+  /**
+   * Signs a JWT token
+   */
+  async jwTSign(
+    payload: string | Record<string, any>,
+    secret: string,
+    expiresIn?: string | number,
+  ): Promise<string> {
+    const data = typeof payload === 'string' ? { data: payload } : payload;
+    return this.jwtService.sign(data, {
+      secret,
+      expiresIn: expiresIn as any,
+    });
+  }
+
+  /**
+   * Validates a token and its fingerprint
+   */
   async validateToken(
     token: string,
     clientIp: string,
-    enforceReplayProtection: boolean,
-    AUTH_KEY?: string,
-  ) {
+    isRefresh: boolean,
+    secret: string = ACCESS_AUTH,
+  ): Promise<any> {
     try {
-      // 1. Verify the token with the correct secret and algorithm
-      const decodedToken = await this.jwtService.verifyAsync(token, {
-        secret: AUTH_KEY || ACCESS_AUTH, // Use the same secret key that was used during signing
-        algorithms: ['HS256'], // Ensure a strong algorithm is enforced
-      });
+      const decoded = await this.jwtService.verifyAsync(token, { secret });
+      const payload = decoded.data
+        ? this.decryptPayload(decoded.data)
+        : decoded;
 
-      // 2. Decrypt the payload to get the original data
-      const decryptedPayload = this.decryptPayload(decodedToken.data);
-
-      // 3. Extract the necessary details from the decrypted payload
-      const { fingerprint, jti, username, exp } = decryptedPayload;
-
-      // 4. Verify the fingerprint (to bind token to the client)
-      this.validateFingerprint(fingerprint, username, clientIp);
-
-      // 5. Verify the JTI for replay protection
-      if (enforceReplayProtection) {
-        if (this.checkIfJtiUsed(jti)) {
-          throw new Error('The token has already been used.');
-        }
-
-        //6. Mark the JTI as used, associating it with its expiration time
-        this.markJtiAsUsed(jti, exp);
-      }
-
-      // 7. If all checks pass, return the decrypted payload (user data)
-      return decryptedPayload;
-    } catch (error) {
-      // Handle token expiration or invalid token
-      if (error.name === 'TokenExpiredError') {
-        throw new NotAcceptableException('Access token has expired');
-      } else if (error.name === 'JsonWebTokenError') {
-        throw new NotAcceptableException('Invalid access token');
-      } else {
-        throw new NotAcceptableException(
-          `Token verification failed: ${error.message}`,
+      // Optional fingerprint validation if present in payload
+      if (payload.fingerprint && payload.username) {
+        const currentFingerprint = this.generateFingerprint(
+          payload.username,
+          clientIp,
         );
+        if (payload.fingerprint !== currentFingerprint) {
+          throw new NotAcceptableException('Invalid token fingerprint');
+        }
       }
+
+      return payload;
+    } catch (error) {
+      throw new NotAcceptableException(
+        error.message || 'Invalid or expired token',
+      );
     }
   }
 
-  async validateRefreshToken(token: string, AUTH_KEY: string) {
+  /**
+   * Validates a refresh token specifically
+   */
+  async validateRefreshToken(
+    token: string,
+    secret: string = REFRESH_AUTH,
+  ): Promise<any> {
     try {
-      // 1. Verify the token with the correct secret and algorithm
-      const decodedToken = await this.jwtService.verifyAsync(token, {
-        secret: AUTH_KEY, // Use the same secret key that was used during signing
-        algorithms: ['HS256'], // Ensure a strong algorithm is enforced
-      });
-
-      // 2. Decrypt the payload to get the original data
-      const decryptedPayload = this.decryptPayload(decodedToken.data);
-
-      // 3. If all checks pass, return the decrypted payload (user data)
-      return decryptedPayload;
+      const decoded = await this.jwtService.verifyAsync(token, { secret });
+      return decoded.data ? this.decryptPayload(decoded.data) : decoded;
     } catch (error) {
-      // Handle token expiration or invalid token
-      if (error.name === 'TokenExpiredError') {
-        throw new NotAcceptableException('Access token has expired');
-      } else if (error.name === 'JsonWebTokenError') {
-        throw new NotAcceptableException('Invalid access token');
-      } else {
-        throw new NotAcceptableException(
-          `Token verification failed: ${error.message}`,
-        );
+      throw new NotAcceptableException('Invalid or expired refresh token');
+    }
+  }
+
+  // Cleanup expired JTIs
+  private cleanupJtis(): void {
+    const now = Date.now();
+    for (const [jti, expiry] of this.usedJtis.entries()) {
+      if (now > expiry) {
+        this.usedJtis.delete(jti);
       }
     }
   }
 }
-
-/*
-    // Sign JWT with encrypted payload
-    // const access_token = this.jwtService.sign(
-    //   { data: encryptedPayload },
-    //   {
-    //     algorithm: 'HS256',
-    //     expiresIn: '15m',
-    //     secret: ACCESS_AUTH,
-    //   },
-    // );
-
-    // jwtService.sign(
-    //   { data: encryptedPayload },
-    //   {
-    //     algorithm: 'HS256',
-    //     expiresIn: '15m',
-    //     secret: REFRESH_AUTH, // Use environment variable
-    //   },
-    // );
-
-    // jwtService.sign(
-    //   { data: encryptedPayload },
-    //   {
-    //     algorithm: 'HS256',
-    //     expiresIn: '30m',
-    //     secret: ADMIN_ACCESS_AUTH, // Use environment variable
-    //   },
-    // );
-*/

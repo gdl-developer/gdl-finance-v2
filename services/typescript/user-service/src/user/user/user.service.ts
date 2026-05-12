@@ -54,29 +54,26 @@ import { VirtualWallet } from '../virtual-account/entities/virtual-wallet.entity
 import { IncomeInvestmentRequest } from '../investment-request-income/entities/investment-request-income.entity';
 import { FundRedemptionIncomeRequest } from '../investment-request-income/entities/redemption-income-request.entity';
 
-const env_config = new EnvService().read();
-const ACCT_BASE_URL = env_config.ACCT_BASE_URL;
-const NOTN_BASE_URL = env_config.NOTN_BASE_URL;
-const REFRESH_AUTH = env_config.REFRESH_AUTH;
-const currency = 'NG';
-
-// AWS S3 config
-const AWS_REGION = env_config.AWS_REGION;
-const AWS_ACCESS_KEY_ID = env_config.AWS_ACCESS_KEY_ID;
-const AWS_SECRET_ACCESS_KEY = env_config.AWS_SECRET_ACCESS_KEY;
-const S3_BUCKET_NAME = env_config.S3_BUCKET_NAME;
-const SIGNED_URL_EXPIRATION = Number(env_config.SIGNED_URL_EXPIRATION || 900);
-
-const s3Client = new S3Client({
-  region: AWS_REGION,
-  credentials: {
-    accessKeyId: AWS_ACCESS_KEY_ID,
-    secretAccessKey: AWS_SECRET_ACCESS_KEY,
-  },
-});
-
 @Injectable()
 export class UserService extends AbstractService {
+  private readonly env_config = this.envService.read();
+  private readonly ACCT_BASE_URL = this.env_config.ACCT_BASE_URL;
+  private readonly NOTN_BASE_URL = this.env_config.NOTN_BASE_URL;
+  private readonly REFRESH_AUTH = this.env_config.REFRESH_AUTH;
+  private readonly currency = 'NG';
+  private readonly S3_BUCKET_NAME = this.env_config.S3_BUCKET_NAME;
+  private readonly SIGNED_URL_EXPIRATION = Number(
+    this.env_config.SIGNED_URL_EXPIRATION || 900,
+  );
+
+  private readonly s3Client = new S3Client({
+    region: this.env_config.AWS_REGION,
+    credentials: {
+      accessKeyId: this.env_config.AWS_ACCESS_KEY_ID,
+      secretAccessKey: this.env_config.AWS_SECRET_ACCESS_KEY,
+    },
+  });
+
   constructor(
     @InjectRepository(UserAccount)
     private readonly userAccountRepository: Repository<UserAccount>,
@@ -89,6 +86,7 @@ export class UserService extends AbstractService {
     private readonly externalApiCallsService: ExternalApiCallsService,
     private readonly cbaInteractionsService: CbaInteractionsService,
     private readonly jwtAuthUtilsService: JwtAuthUtilsService,
+    private readonly envService: EnvService,
   ) {
     super(userAccountRepository);
   }
@@ -98,7 +96,7 @@ export class UserService extends AbstractService {
   async findAllUsers(
     page = 1,
     per_page = 15,
-    query: any = {},
+    query: Record<string, any> = {},
   ): Promise<paginatedResult> {
     const take = per_page || 15;
     const skip = (page - 1) * take;
@@ -181,13 +179,13 @@ export class UserService extends AbstractService {
       phonenumber: user.phone,
       firstname: user.first_name,
       lastname: user.last_name,
-      currency,
+      currency: user.currency,
     };
 
     const refresh_token = await this.signTempRefreshTokens(user, client_ip);
 
     const user_wallet = await this.externalApiCallsService.postData(
-      `${ACCT_BASE_URL}/accounts/wallet`,
+      `${this.ACCT_BASE_URL}/accounts/wallet`,
       data_to_post,
       refresh_token,
     );
@@ -220,7 +218,7 @@ export class UserService extends AbstractService {
 
   async sendUserAuthNotifications(data: any): Promise<any> {
     const user_notn = await this.postData(
-      `${NOTN_BASE_URL}/notifications/send`,
+      `${this.NOTN_BASE_URL}/notifications/send`,
       data,
     );
 
@@ -451,7 +449,10 @@ export class UserService extends AbstractService {
     };
 
     const encryptedPayload = this.jwtAuthUtilsService.encryptPayload(payload);
-    return this.jwtAuthUtilsService.jwTSign(encryptedPayload, REFRESH_AUTH);
+    return this.jwtAuthUtilsService.jwTSign(
+      encryptedPayload,
+      this.REFRESH_AUTH,
+    );
   }
 
   /* -------------------------- AWS S3 Secure URLs -------------------------- */
@@ -474,8 +475,8 @@ export class UserService extends AbstractService {
     const key = `users/${user.id}/${fileName}`;
 
     try {
-      await s3Client.send(
-        new HeadObjectCommand({ Bucket: S3_BUCKET_NAME, Key: key }),
+      await this.s3Client.send(
+        new HeadObjectCommand({ Bucket: this.S3_BUCKET_NAME, Key: key }),
       );
       throw new ConflictException('File already exists.');
     } catch (err: any) {
@@ -485,16 +486,16 @@ export class UserService extends AbstractService {
     }
 
     const command = new PutObjectCommand({
-      Bucket: S3_BUCKET_NAME,
+      Bucket: this.S3_BUCKET_NAME,
       Key: key,
       ContentType: contentType,
     });
 
-    const url = await getSignedUrl(s3Client, command, {
-      expiresIn: SIGNED_URL_EXPIRATION,
+    const url = await getSignedUrl(this.s3Client, command, {
+      expiresIn: this.SIGNED_URL_EXPIRATION,
     });
 
-    return { uploadUrl: url, key, expiresIn: SIGNED_URL_EXPIRATION };
+    return { uploadUrl: url, key, expiresIn: this.SIGNED_URL_EXPIRATION };
   }
 
   async generateS3DownloadUrl(user: UserAccount, key: string) {
@@ -502,19 +503,21 @@ export class UserService extends AbstractService {
     if (!key.startsWith(`users/${user.id}/`))
       throw new NotAcceptableException('Access denied for this file');
 
-    const command = new GetObjectCommand({ Bucket: S3_BUCKET_NAME, Key: key });
-    const url = await getSignedUrl(s3Client, command, {
-      expiresIn: SIGNED_URL_EXPIRATION,
+    const command = new GetObjectCommand({
+      Bucket: this.S3_BUCKET_NAME,
+      Key: key,
+    });
+    const url = await getSignedUrl(this.s3Client, command, {
+      expiresIn: this.SIGNED_URL_EXPIRATION,
     });
 
-    return { downloadUrl: url, expiresIn: SIGNED_URL_EXPIRATION };
+    return { downloadUrl: url, expiresIn: this.SIGNED_URL_EXPIRATION };
   }
 
   decryptPublicKey(publicKey: string): string {
     try {
       // get secret from EnvService
-      const env_config = new EnvService().read();
-      const secret = env_config.PUBLIC_KEY_SECRET;
+      const secret = this.env_config.PUBLIC_KEY_SECRET;
 
       if (!secret) {
         throw new NotImplementedException('Decryption secret not configured');
@@ -631,7 +634,7 @@ export class UserService extends AbstractService {
       // Call Accounts-Service to delete user wallet and BVN (remote cleanup)
       try {
         await this.externalApiCallsService.postData(
-          `${ACCT_BASE_URL}/wallet/delete/user/${userId}`,
+          `${this.ACCT_BASE_URL}/wallet/delete/user/${userId}`,
           {},
         );
       } catch (acctErr) {

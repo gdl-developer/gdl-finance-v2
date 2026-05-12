@@ -4,7 +4,6 @@ import {
   Body,
   Res,
   Req,
-  Get,
   UseGuards,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -13,7 +12,6 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { firstValueFrom } from 'rxjs';
 
-import { IdentityResponse, UserProfile } from './interfaces/identity.interface';
 import { AuthenticatedRequest } from './interfaces/request.interface';
 
 @Controller('auth')
@@ -35,12 +33,11 @@ export class AuthController {
       ...loginDto,
       ip_address: req.ip,
       user_agent: req.headers['user-agent'],
+      device_id: req.headers['x-device-id'],
     };
 
     try {
-      const result = (await firstValueFrom(
-        this.authService.login(payload),
-      )) as IdentityResponse;
+      const result = await firstValueFrom(this.authService.login(payload));
 
       if (result && result.success && result.token) {
         void res.setCookie('access_token', result.token, {
@@ -51,10 +48,24 @@ export class AuthController {
           maxAge: 15 * 60,
         });
 
+        if (result.refresh_token) {
+          void res.setCookie('refresh_token', result.refresh_token, {
+            httpOnly: true,
+            secure: true,
+            path: '/',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60,
+          });
+        }
+
         return res.send({
           success: true,
           message: 'Login successful',
-          data: { user_id: result.user_id },
+          data: {
+            user_id: result.user_id,
+            token: result.token,
+            refresh_token: result.refresh_token,
+          },
         });
       }
       throw new UnauthorizedException('Invalid credentials');
@@ -84,5 +95,58 @@ export class AuthController {
       pin: body.pin,
       type: body.type,
     });
+  }
+
+  @Post('refresh-token')
+  async refreshToken(
+    @Body() body: { refresh_token?: string },
+    @Req() req: FastifyRequest,
+    @Res() res: FastifyReply,
+  ) {
+    const refreshToken = body.refresh_token || req.cookies['refresh_token'];
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+
+    try {
+      const result = await firstValueFrom(
+        this.authService.refreshToken({
+          refresh_token: refreshToken,
+          ip_address: req.ip,
+        }),
+      );
+
+      if (result && result.success) {
+        void res.setCookie('access_token', result.token, {
+          httpOnly: true,
+          secure: true,
+          path: '/',
+          sameSite: 'strict',
+          maxAge: 15 * 60,
+        });
+
+        if (result.refresh_token) {
+          void res.setCookie('refresh_token', result.refresh_token, {
+            httpOnly: true,
+            secure: true,
+            path: '/',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60,
+          });
+        }
+
+        return res.send({
+          success: true,
+          data: {
+            token: result.token,
+            refresh_token: result.refresh_token,
+          },
+        });
+      }
+      throw new UnauthorizedException('Invalid refresh token');
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 }
