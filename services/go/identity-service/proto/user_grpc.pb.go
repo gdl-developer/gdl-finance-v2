@@ -25,6 +25,7 @@ const (
 	IdentityService_GetProfile_FullMethodName               = "/identity.IdentityService/GetProfile"
 	IdentityService_ForgotPassword_FullMethodName           = "/identity.IdentityService/ForgotPassword"
 	IdentityService_RefreshToken_FullMethodName             = "/identity.IdentityService/RefreshToken"
+	IdentityService_CompleteProfile_FullMethodName          = "/identity.IdentityService/CompleteProfile"
 	IdentityService_CreateRole_FullMethodName               = "/identity.IdentityService/CreateRole"
 	IdentityService_AssignRole_FullMethodName               = "/identity.IdentityService/AssignRole"
 	IdentityService_GetRoles_FullMethodName                 = "/identity.IdentityService/GetRoles"
@@ -55,6 +56,7 @@ type IdentityServiceClient interface {
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error)
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*ForgotPasswordResponse, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
+	CompleteProfile(ctx context.Context, in *CompleteProfileRequest, opts ...grpc.CallOption) (*CompleteProfileResponse, error)
 	// RBAC Management
 	CreateRole(ctx context.Context, in *CreateRoleRequest, opts ...grpc.CallOption) (*CreateRoleResponse, error)
 	AssignRole(ctx context.Context, in *AssignRoleRequest, opts ...grpc.CallOption) (*AssignRoleResponse, error)
@@ -64,7 +66,7 @@ type IdentityServiceClient interface {
 	GetBusinessUnits(ctx context.Context, in *GetBusinessUnitsRequest, opts ...grpc.CallOption) (*GetBusinessUnitsResponse, error)
 	UpdateBusinessUnit(ctx context.Context, in *UpdateBusinessUnitRequest, opts ...grpc.CallOption) (*UpdateBusinessUnitResponse, error)
 	DeleteBusinessUnit(ctx context.Context, in *DeleteBusinessUnitRequest, opts ...grpc.CallOption) (*DeleteBusinessUnitResponse, error)
-	// Security & PINs
+	// PIN Management
 	SetPIN(ctx context.Context, in *SetPINRequest, opts ...grpc.CallOption) (*SetPINResponse, error)
 	VerifyPIN(ctx context.Context, in *VerifyPINRequest, opts ...grpc.CallOption) (*VerifyPINResponse, error)
 	CheckAccountStatus(ctx context.Context, in *CheckStatusRequest, opts ...grpc.CallOption) (*CheckStatusResponse, error)
@@ -75,7 +77,7 @@ type IdentityServiceClient interface {
 	GetSecurityQuestions(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SecurityQuestionsResponse, error)
 	SetUserSecurityQuestions(ctx context.Context, in *SetUserQuestionsRequest, opts ...grpc.CallOption) (*SetUserQuestionsResponse, error)
 	VerifySecurityAnswer(ctx context.Context, in *VerifyAnswerRequest, opts ...grpc.CallOption) (*VerifyAnswerResponse, error)
-	// NDPR/GDPR Compliance
+	// Data Privacy
 	ExportData(ctx context.Context, in *ExportDataRequest, opts ...grpc.CallOption) (*ExportDataResponse, error)
 	DeleteAccount(ctx context.Context, in *DeleteAccountRequest, opts ...grpc.CallOption) (*DeleteAccountResponse, error)
 	UpdateConsent(ctx context.Context, in *UpdateConsentRequest, opts ...grpc.CallOption) (*UpdateConsentResponse, error)
@@ -143,6 +145,16 @@ func (c *identityServiceClient) RefreshToken(ctx context.Context, in *RefreshTok
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RefreshTokenResponse)
 	err := c.cc.Invoke(ctx, IdentityService_RefreshToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) CompleteProfile(ctx context.Context, in *CompleteProfileRequest, opts ...grpc.CallOption) (*CompleteProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CompleteProfileResponse)
+	err := c.cc.Invoke(ctx, IdentityService_CompleteProfile_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -339,6 +351,7 @@ type IdentityServiceServer interface {
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error)
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*ForgotPasswordResponse, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
+	CompleteProfile(context.Context, *CompleteProfileRequest) (*CompleteProfileResponse, error)
 	// RBAC Management
 	CreateRole(context.Context, *CreateRoleRequest) (*CreateRoleResponse, error)
 	AssignRole(context.Context, *AssignRoleRequest) (*AssignRoleResponse, error)
@@ -348,7 +361,7 @@ type IdentityServiceServer interface {
 	GetBusinessUnits(context.Context, *GetBusinessUnitsRequest) (*GetBusinessUnitsResponse, error)
 	UpdateBusinessUnit(context.Context, *UpdateBusinessUnitRequest) (*UpdateBusinessUnitResponse, error)
 	DeleteBusinessUnit(context.Context, *DeleteBusinessUnitRequest) (*DeleteBusinessUnitResponse, error)
-	// Security & PINs
+	// PIN Management
 	SetPIN(context.Context, *SetPINRequest) (*SetPINResponse, error)
 	VerifyPIN(context.Context, *VerifyPINRequest) (*VerifyPINResponse, error)
 	CheckAccountStatus(context.Context, *CheckStatusRequest) (*CheckStatusResponse, error)
@@ -359,7 +372,7 @@ type IdentityServiceServer interface {
 	GetSecurityQuestions(context.Context, *Empty) (*SecurityQuestionsResponse, error)
 	SetUserSecurityQuestions(context.Context, *SetUserQuestionsRequest) (*SetUserQuestionsResponse, error)
 	VerifySecurityAnswer(context.Context, *VerifyAnswerRequest) (*VerifyAnswerResponse, error)
-	// NDPR/GDPR Compliance
+	// Data Privacy
 	ExportData(context.Context, *ExportDataRequest) (*ExportDataResponse, error)
 	DeleteAccount(context.Context, *DeleteAccountRequest) (*DeleteAccountResponse, error)
 	UpdateConsent(context.Context, *UpdateConsentRequest) (*UpdateConsentResponse, error)
@@ -390,6 +403,9 @@ func (UnimplementedIdentityServiceServer) ForgotPassword(context.Context, *Forgo
 }
 func (UnimplementedIdentityServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedIdentityServiceServer) CompleteProfile(context.Context, *CompleteProfileRequest) (*CompleteProfileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CompleteProfile not implemented")
 }
 func (UnimplementedIdentityServiceServer) CreateRole(context.Context, *CreateRoleRequest) (*CreateRoleResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateRole not implemented")
@@ -570,6 +586,24 @@ func _IdentityService_RefreshToken_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IdentityServiceServer).RefreshToken(ctx, req.(*RefreshTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_CompleteProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).CompleteProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_CompleteProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).CompleteProfile(ctx, req.(*CompleteProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -928,6 +962,10 @@ var IdentityService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshToken",
 			Handler:    _IdentityService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "CompleteProfile",
+			Handler:    _IdentityService_CompleteProfile_Handler,
 		},
 		{
 			MethodName: "CreateRole",

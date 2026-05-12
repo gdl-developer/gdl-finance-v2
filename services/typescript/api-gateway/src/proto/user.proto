@@ -11,6 +11,7 @@ service IdentityService {
   rpc GetProfile (GetProfileRequest) returns (GetProfileResponse) {}
   rpc ForgotPassword (ForgotPasswordRequest) returns (ForgotPasswordResponse) {}
   rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse) {}
+  rpc CompleteProfile (CompleteProfileRequest) returns (CompleteProfileResponse) {}
   
   // RBAC Management
   rpc CreateRole (CreateRoleRequest) returns (CreateRoleResponse) {}
@@ -122,13 +123,12 @@ message RoleInfo {
 message RegisterRequest {
   string email = 1;
   string password = 2;
-  string first_name = 3;
-  string last_name = 4;
-  string phone_number = 5;
-  bool terms_accepted = 6;
-  bool privacy_policy_accepted = 7;
-  bool marketing_consent = 8;
-  string policy_version = 9;
+  bool terms_accepted = 3;
+  bool privacy_policy_accepted = 4;
+  bool marketing_consent = 5;
+  string policy_version = 6;
+  string device_hash = 7;
+  string registration_channel = 8;
 }
 
 message RegisterResponse {
@@ -175,6 +175,8 @@ message GetProfileResponse {
   string last_name = 3;
   string phone_number = 4;
   string status = 5;
+  string user_type = 6;
+  RoleInfo role = 7;
 }
 
 message ForgotPasswordRequest {
@@ -311,4 +313,26 @@ message UpdateConsentRequest {
 message UpdateConsentResponse {
   bool success = 1;
   string message = 2;
+}
+
+message CompleteProfileRequest {
+  string user_id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string phone_number = 4;
+  string date_of_birth = 5;
+  string address = 6;
+  string country = 7;
+  string city = 8;
+  string state = 9;
+  string gender = 10;
+  string marital_status = 11;
+  string referred_by = 12;
+  string how_heard_about_us = 13;
+}
+
+message CompleteProfileResponse {
+  bool success = 1;
+  string message = 2;
+  string token = 3;
 }
