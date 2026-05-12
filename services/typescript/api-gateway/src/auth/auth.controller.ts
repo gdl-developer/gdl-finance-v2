@@ -23,6 +23,27 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
+  @Post('registration-step-two')
+  async completeProfile(@Body() body: any, @Res() res: FastifyReply) {
+    const result = await firstValueFrom(this.authService.completeProfile(body));
+    if (result && result.success && result.token) {
+      void res.setCookie('access_token', result.token, {
+        httpOnly: true,
+        secure: true,
+        path: '/',
+        sameSite: 'strict',
+        maxAge: 15 * 60,
+      });
+      return res.send(result);
+    }
+    return res.send(result);
+  }
+
+  @Post('verify-otp')
+  verifyOtp(@Body() body: any) {
+    return this.authService.verifyOtp(body);
+  }
+
   @Post('login')
   async login(
     @Body() loginDto: Record<string, string>,

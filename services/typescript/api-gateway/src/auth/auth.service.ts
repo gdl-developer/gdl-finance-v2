@@ -25,6 +25,8 @@ interface IdentityServiceClient {
   deleteAccount(data: any, metadata: any): Observable<any>;
   updateConsent(data: any, metadata: any): Observable<any>;
   refreshToken(data: any, metadata: any): Observable<any>;
+  completeProfile(data: any, metadata: any): Observable<any>;
+  verifyOTP(data: any, metadata: any): Observable<any>;
 }
 
 @Injectable()
@@ -160,5 +162,13 @@ export class AuthService implements OnModuleInit {
 
   refreshToken(data: { refresh_token: string; ip_address: string }) {
     return this.identityService.refreshToken(data, getGrpcMetadata());
+  }
+
+  completeProfile(data: any) {
+    return this.identityService.completeProfile(data, getGrpcMetadata());
+  }
+
+  verifyOtp(data: { email: string; code: string; type: string }) {
+    return this.identityService.verifyOTP(data, getGrpcMetadata());
   }
 }

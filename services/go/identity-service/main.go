@@ -57,24 +57,73 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to hash password")
 	}
+
+	now := time.Now()
 	user := User{
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
-		Email:        req.Email,
-		PhoneNumber:  req.PhoneNumber,
-		PasswordHash: string(hashedPassword),
-		Status:       "ACTIVE",
+		Email:                 req.Email,
+		PasswordHash:          string(hashedPassword),
+		Status:                "INACTIVE",
+		TermsAccepted:         req.TermsAccepted,
+		PrivacyPolicyAccepted: req.PrivacyPolicyAccepted,
+		MarketingConsent:      req.MarketingConsent,
+		ConsentTimestamp:      &now,
+		PolicyVersion:         req.PolicyVersion,
+		RegistrationChannel:   req.RegistrationChannel,
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create user")
 	}
 
+	// In a real system, we would trigger an OTP email here.
+	// For now, we assume the VerifyOTP RPC will be called next.
+
 	return &pb.RegisterResponse{
 		Success: true,
 		UserId:  fmt.Sprintf("%d", user.ID),
-		Message: "User registered successfully",
+		Message: "User registered successfully. Please verify your email.",
 	}, nil
+}
+
+func (s *server) CompleteProfile(ctx context.Context, req *pb.CompleteProfileRequest) (*pb.CompleteProfileResponse, error) {
+	var user User
+	if err := s.db.First(&user, req.UserId).Error; err != nil {
+		return nil, status.Errorf(codes.NotFound, "user not found")
+	}
+
+	// V1 Logic: Step 2 updates profile and activates account
+	user.FirstName = req.FirstName
+	user.LastName = req.LastName
+	user.PhoneNumber = req.PhoneNumber
+	user.DateOfBirth = req.DateOfBirth
+	user.Address = req.Address
+	user.Country = req.Country
+	user.City = req.City
+	user.State = req.State
+	user.Gender = req.Gender
+	user.MaritalStatus = req.MaritalStatus
+	user.ReferredBy = req.ReferredBy
+	user.HowHeardAboutUs = req.HowHeardAboutUs
+	user.UserTxnRef = GenerateUserTxnRef()
+	user.Status = "ACTIVE"
+
+	if err := s.db.Save(&user).Error; err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update profile")
+	}
+
+	token, _ := GenerateToken(fmt.Sprintf("%d", user.ID), "USER")
+
+	return &pb.CompleteProfileResponse{
+		Success: true,
+		Message: "Profile completed successfully",
+		Token:   token,
+	}, nil
+}
+
+func GenerateUserTxnRef() string {
+	// Replicating V1 logic: GDL + random number
+	randNum := 1040066841 + (time.Now().UnixNano() % 1000000883)
+	return fmt.Sprintf("GDL%d", randNum)
 }
 
 func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
@@ -85,6 +134,10 @@ func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return &pb.LoginResponse{Success: false, Message: "Invalid credentials"}, nil
+	}
+
+	if user.Status != "ACTIVE" && user.Status != "VERIFIED" {
+		return &pb.LoginResponse{Success: false, Message: "Account not active. Please complete registration."}, nil
 	}
 
 	token, err := GenerateToken(fmt.Sprintf("%d", user.ID), user.Role.Name)
@@ -104,6 +157,30 @@ func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 		Token:        token,
 		RefreshToken: refreshToken,
 		Message:      "Login successful",
+	}, nil
+}
+
+func (s *server) VerifyOTP(ctx context.Context, req *pb.VerifyOTPRequest) (*pb.VerifyOTPResponse, error) {
+	var user User
+	if err := s.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		return &pb.VerifyOTPResponse{Success: false, Message: "User not found"}, nil
+	}
+
+	// For simulation, we accept "123456" as a valid code
+	if req.Code != "123456" {
+		return &pb.VerifyOTPResponse{Success: false, Message: "Invalid OTP code"}, nil
+	}
+
+	if user.Status == "INACTIVE" {
+		user.Status = "VERIFIED"
+		if err := s.db.Save(&user).Error; err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to update user status")
+		}
+	}
+
+	return &pb.VerifyOTPResponse{
+		Success: true,
+		Message: "Email verified successfully",
 	}, nil
 }
 

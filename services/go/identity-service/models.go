@@ -61,13 +61,27 @@ type User struct {
 	KYCLevelID uint     `json:"kyc_level_id"`
 	KYCLevel   KYCLevel `json:"kyc_level"`
 
-	// NDPR/GDPR Compliance
+	// GDPR/NDPR Compliance
 	TermsAccepted         bool       `gorm:"default:false" json:"terms_accepted"`
 	PrivacyPolicyAccepted bool       `gorm:"default:false" json:"privacy_policy_accepted"`
 	MarketingConsent      bool       `gorm:"default:false" json:"marketing_consent"`
 	ConsentTimestamp      *time.Time `json:"consent_timestamp"`
 	PolicyVersion         string     `json:"policy_version"`
 	IsDeleted             bool       `gorm:"default:false" json:"is_deleted"`
+
+	// Profile Information
+	DateOfBirth         string `json:"date_of_birth"`
+	Address             string `json:"address"`
+	Country             string `json:"country"`
+	City                string `json:"city"`
+	State               string `json:"state"`
+	Gender              string `json:"gender"`
+	MaritalStatus       string `json:"marital_status"`
+	NIN                 string `json:"nin"`
+	ReferredBy          string `json:"referred_by"`
+	HowHeardAboutUs     string `json:"how_heard_about_us"`
+	RegistrationChannel string `json:"registration_channel"`
+	UserTxnRef          string `json:"user_txn_ref"`
 
 	// RBAC
 	RoleID uint `json:"role_id"`
