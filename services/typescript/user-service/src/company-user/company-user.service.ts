@@ -10,10 +10,7 @@ import { Repository, Connection } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
-import {
-  CompanyUser,
-  CompanyUserStatus,
-} from './entities/company-user.entity';
+import { CompanyUser, CompanyUserStatus } from './entities/company-user.entity';
 import {
   CompanyUserAuthAction,
   AuthActionType,
