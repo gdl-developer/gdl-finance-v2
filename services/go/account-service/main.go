@@ -18,7 +18,7 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -139,10 +139,10 @@ func main() {
 	dbPass := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require",
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=skip-verify",
 		dbUser, dbPass, dbHost, dbPort, dbName)
 
-	db, _ := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	db.AutoMigrate(&Account{}, &BalanceSyncLog{}, &TransactionAuditLog{})
 
 	rdb := InitRedis()

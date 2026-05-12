@@ -1,6 +1,6 @@
 module github.com/gdl/transaction-service
 
-go 1.26.2
+go 1.24
 
 replace github.com/gdl/identity-service => ../identity-service
 
