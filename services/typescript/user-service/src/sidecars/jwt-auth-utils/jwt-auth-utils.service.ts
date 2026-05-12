@@ -6,6 +6,7 @@ import * as dotenv from 'dotenv'; // Load environment variables
 dotenv.config();
 
 const ACCESS_AUTH = process.env.ACCESS_AUTH || 'your_access_auth_secret';
+const REFRESH_AUTH = process.env.REFRESH_AUTH || 'your_refresh_auth_secret';
 const IV_LENGTH = 16; // AES block size for CBC mode
 const ENCRYPTION_KEY =
   process.env.PAYLOAD_ENCRYPTION_SECRET || 'your_payload_encryption_secret_32'; // Must be 32 bytes for aes-256
@@ -123,7 +124,7 @@ export class JwtAuthUtilsService {
     token: string,
     clientIp: string,
     isRefresh: boolean,
-    secret: string,
+    secret: string = ACCESS_AUTH,
   ): Promise<any> {
     try {
       const decoded = await this.jwtService.verifyAsync(token, { secret });
@@ -153,7 +154,10 @@ export class JwtAuthUtilsService {
   /**
    * Validates a refresh token specifically
    */
-  async validateRefreshToken(token: string, secret: string): Promise<any> {
+  async validateRefreshToken(
+    token: string,
+    secret: string = REFRESH_AUTH,
+  ): Promise<any> {
     try {
       const decoded = await this.jwtService.verifyAsync(token, { secret });
       return decoded.data ? this.decryptPayload(decoded.data) : decoded;
