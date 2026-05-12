@@ -25,7 +25,10 @@ type server struct {
 }
 
 func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to hash password")
+	}
 	user := User{
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
@@ -62,7 +65,10 @@ func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 	}
 
 	// For now, we use a similar token as refresh token
-	refreshToken, _ := GenerateToken(fmt.Sprintf("%d", user.ID), user.Role.Name)
+	refreshToken, err := GenerateToken(fmt.Sprintf("%d", user.ID), user.Role.Name)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to generate refresh token")
+	}
 
 	return &pb.LoginResponse{
 		Success:      true,
