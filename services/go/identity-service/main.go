@@ -511,17 +511,18 @@ func main() {
 	dbPass := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=skip-verify",
-		dbUser, dbPass, dbHost, dbPort, dbName)
-
+	log.Printf("Connecting to database at %s:%s...", dbHost, dbPort)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
+		log.Fatalf("CRITICAL: Failed to connect to database: %v", err)
 	}
+	log.Println("Database connection successful.")
 
+	log.Println("Starting database migrations...")
 	if err := db.AutoMigrate(&User{}, &Role{}, &Permission{}, &BusinessUnit{}, &Branch{}, &OTP{}, &AuditLog{}, &ConsentAuditLog{}, &KYCLevel{}, &SecurityQuestion{}, &UserSecurityQuestion{}, &Company{}, &CompanyUser{}); err != nil {
-		log.Fatalf("failed to migrate database: %v", err)
+		log.Fatalf("CRITICAL: Database migration failed: %v", err)
 	}
+	log.Println("Database migrations completed successfully.")
 	SeedIdentityData(db)
 
 	log.Println("Starting Identity Service (Go)...")

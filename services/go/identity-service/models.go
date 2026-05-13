@@ -120,7 +120,7 @@ type Company struct {
 
 type CompanyUser struct {
 	ID        uint   `gorm:"primaryKey;type:int(11)"`
-	CompanyID uint   `gorm:"index"`
+	CompanyID uint   `gorm:"index;type:int(11)"`
 	UserID    uint   `gorm:"index;type:int(11)"`
 	Role      string `json:"role"` // OWNER, ADMIN, SIGNATORY
 	CreatedAt time.Time
