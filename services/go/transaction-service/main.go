@@ -21,6 +21,8 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 // maskPII redacts sensitive info for logs
@@ -55,6 +57,7 @@ func withInternalAuth(ctx context.Context) context.Context {
 
 type server struct {
 	pb.UnimplementedTransactionServiceServer
+	db       *gorm.DB
 	identity identity_pb.IdentityServiceClient
 	account  account_pb.AccountServiceClient
 	bankone  bankone_pb.BankOneServiceClient
@@ -113,8 +116,35 @@ func (s *server) TransferBank(ctx context.Context, req *pb.BankTransferRequest) 
 	})
 
 	if err != nil || !bankoneResp.Success {
+		// Log Failed Transaction
+		s.db.Create(&Transaction{
+			UserID:         uint(parseUint(req.FromUserId)),
+			TxnRef:         fmt.Sprintf("FAIL-%d", time.Now().UnixNano()),
+			RequestRef:     fmt.Sprintf("REQ-%d", time.Now().UnixNano()),
+			Amount:         req.Amount,
+			Type:           "DEBIT",
+			Status:         "FAILED",
+			InternalStatus: "FAILED",
+			Narration:      req.Narration,
+			CreatedAt:      time.Now(),
+		})
 		return &pb.TransferResponse{Success: false, Message: "BankOne Transfer Failed: " + bankoneResp.Message}, nil
 	}
+
+	// 6. LOG SUCCESS: Save to V1 Compatible Table
+	s.db.Create(&Transaction{
+		UserID:           uint(parseUint(req.FromUserId)),
+		TxnRef:           bankoneResp.Message, // Assuming BankOne returns ref here
+		RequestRef:       fmt.Sprintf("REQ-%d", time.Now().UnixNano()),
+		Amount:           req.Amount,
+		Type:             "DEBIT",
+		Status:           "COMPLETED",
+		InternalStatus:   "COMPLETED",
+		Narration:        req.Narration,
+		RecipientAccount: req.AccountNumber,
+		RecipientName:    req.ReceiverName,
+		CreatedAt:        time.Now(),
+	})
 
 	return &pb.TransferResponse{
 		Success:        true,
@@ -189,8 +219,27 @@ func (s *server) AccountEnquiry(ctx context.Context, req *pb.EnquiryRequest) (*p
 	}, nil
 }
 
+func parseUint(s string) uint64 {
+	var val uint64
+	fmt.Sscanf(s, "%d", &val)
+	return val
+}
+
 func main() {
 	godotenv.Load()
+
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USERNAME")
+	dbPass := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=skip-verify",
+		dbUser, dbPass, dbHost, dbPort, dbName)
+
+	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db.AutoMigrate(&Transaction{})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "50060"
@@ -229,6 +278,7 @@ func main() {
 		grpc.UnaryInterceptor(authInterceptor),
 	)
 	pb.RegisterTransactionServiceServer(s, &server{
+		db:       db,
 		identity: identityClient,
 		account:  accountClient,
 		bankone:  bankoneClient,

@@ -21,24 +21,31 @@ export enum PoolType {
   INCOME = 'INCOME',
 }
 
-@Entity('investment_requests')
+@Entity('mmf_investment_request')
 export class InvestmentRequest {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ name: 'user_id' })
-  userId: string;
+  userId: number;
 
   @Column({
     type: 'enum',
     enum: PoolType,
+    default: PoolType.MMF,
   })
   pool_type: PoolType;
 
   @Column('decimal', { precision: 20, scale: 2 })
   amount: number;
 
-  @Column({ nullable: true })
+  @Column('decimal', { precision: 20, scale: 2, default: 0 })
+  price: number;
+
+  @Column('decimal', { precision: 20, scale: 2, default: 0 })
+  quantity: number;
+
+  @Column({ name: 'account', nullable: true })
   account_number: string;
 
   @Column({ unique: true })
@@ -51,7 +58,7 @@ export class InvestmentRequest {
   })
   status: InvestmentStatus;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   admin_notes: string;
 
   @CreateDateColumn()

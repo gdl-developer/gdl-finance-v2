@@ -7,12 +7,15 @@ import (
 )
 
 type Account struct {
-	ID            uint           `gorm:"primaryKey" json:"id"`
-	AccountNumber string         `gorm:"uniqueIndex" json:"account_number"`
-	UserID        string         `gorm:"uniqueIndex;not null" json:"user_id"`
-	Balance       float64        `gorm:"default:0" json:"balance"`
-	Currency      string         `gorm:"default:'NGN'" json:"currency"`
-	Status        string         `gorm:"default:'ACTIVE'" json:"status"`
+	ID            uint    `gorm:"primaryKey;type:int(11)" json:"id"`
+	AccountNumber string  `gorm:"column:nuban_account;uniqueIndex" json:"account_number"`
+	UserID        uint    `gorm:"column:user_id;index;type:int(11);not null" json:"user_id"`
+	UserRef       string  `gorm:"column:user_account_ref;uniqueIndex" json:"user_account_ref"`
+	Balance       float64 `gorm:"column:available_balance;default:0" json:"balance"`
+	LedgerBalance float64 `gorm:"column:ledger_balance;default:0" json:"ledger_balance"`
+	Currency      string  `gorm:"column:currency;default:'NGN'" json:"currency"`
+	Status        string  `gorm:"column:account_status;default:'ACTIVE'" json:"status"`
+	AccountType   string  `gorm:"column:account_type" json:"account_type"`
 
 	// Core BankOne Account
 	BankOneAccount string  `json:"bankone_account"`
@@ -28,6 +31,10 @@ type Account struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
+func (Account) TableName() string {
+	return "nuban_account"
 }
 
 type BalanceSyncLog struct {

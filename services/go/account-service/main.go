@@ -99,7 +99,7 @@ func (s *server) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb
 	return &pb.GetAccountResponse{
 		Id:            fmt.Sprintf("%d", account.ID),
 		AccountNumber: account.BankOneAccount,
-		UserId:        account.UserID,
+		UserId:        fmt.Sprintf("%d", account.UserID),
 		Status:        account.Status,
 	}, nil
 }
@@ -125,7 +125,7 @@ func (s *server) InitializeCBAAccounts(ctx context.Context, req *pb.InitializeCB
 	}
 
 	newAccount := Account{
-		UserID:           req.UserId,
+		UserID:           uint(parseUint(req.UserId)),
 		BankOneAccount:   nuban,
 		BankOneBalance:   0.0,
 		UBALedgerAccount: "UBA-VIRT-" + req.UserId,
@@ -154,6 +154,12 @@ func (s *server) AcquireLock(ctx context.Context, req *pb.LockRequest) (*pb.Lock
 func (s *server) ReleaseLock(ctx context.Context, req *pb.UnlockRequest) (*pb.LockResponse, error) {
 	success := s.redis.ReleaseLock(ctx, req.Key, req.Token)
 	return &pb.LockResponse{Success: success}, nil
+}
+
+func parseUint(s string) uint64 {
+	var val uint64
+	fmt.Sscanf(s, "%d", &val)
+	return val
 }
 
 func main() {
