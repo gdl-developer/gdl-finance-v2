@@ -21,10 +21,16 @@ type KYCLevel struct {
 // OWASP: Answers are hashed before storage.
 type UserSecurityQuestion struct {
 	ID         uint   `gorm:"primaryKey;type:int(11)"`
-	UserID     uint   `gorm:"index;type:int(11)"`
-	QuestionID uint   `json:"question_id"`
-	AnswerHash string `json:"-"`
+	UserID     uint   `gorm:"column:user_id;index;type:int(11)"`
+	Question   string `gorm:"column:question"` // V1 compatibility
+	Answer     string `gorm:"column:answer"`   // V1 compatibility
+	QuestionID uint   `json:"question_id"`     // V2 future-proofing
+	AnswerHash string `json:"-"`               // V2 future-proofing
 	CreatedAt  time.Time
+}
+
+func (UserSecurityQuestion) TableName() string {
+	return "user_security_question"
 }
 
 type SecurityQuestion struct {
@@ -37,13 +43,14 @@ type SecurityQuestion struct {
 type User struct {
 	ID                 uint    `gorm:"primaryKey;type:int(11)" json:"id"`
 	Email              string  `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash       string  `gorm:"not null" json:"-"`
-	FirstName          string  `json:"first_name"`
-	LastName           string  `json:"last_name"`
-	PhoneNumber        *string `gorm:"type:varchar(255);uniqueIndex" json:"phone_number"`
-	Status             string  `gorm:"default:'PENDING_VERIFICATION'" json:"status"`
-	AccountType        string  `gorm:"default:'INDIVIDUAL'" json:"account_type"` // INDIVIDUAL or CORPORATE
-	IsTwoFactorEnabled bool    `gorm:"default:false" json:"is_2fa_enabled"`
+	PasswordHash       string  `gorm:"column:password;not null" json:"-"`
+	FirstName          string  `gorm:"column:first_name" json:"first_name"`
+	LastName           string  `gorm:"column:last_name" json:"last_name"`
+	PhoneNumber        *string `gorm:"column:phone;type:varchar(255);uniqueIndex" json:"phone_number"`
+	Status             string  `gorm:"column:account_status;default:'PENDING_VERIFICATION'" json:"status"`
+	AccountType        string  `gorm:"column:account_type;default:'INDIVIDUAL'" json:"account_type"` // INDIVIDUAL or CORPORATE
+	IsTwoFactorEnabled bool    `gorm:"column:is_2fa_enabled;default:false" json:"is_2fa_enabled"`
+	UserType           string  `gorm:"column:user_type;default:'USER'" json:"user_type"`
 
 	// Corporate Linking
 	CompanyID *uint    `gorm:"type:int(11)" json:"company_id"`
@@ -92,6 +99,10 @@ type User struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
+}
+
+func (User) TableName() string {
+	return "user_account"
 }
 
 type Company struct {
@@ -153,23 +164,31 @@ type Branch struct {
 // OWASP: Short-lived, used once, hashed if sensitive.
 type OTP struct {
 	ID        uint      `gorm:"primaryKey;type:int(11)"`
-	UserID    uint      `gorm:"index;type:int(11)"`
-	Code      string    `gorm:"not null"`
-	Type      string    `gorm:"not null"` // VERIFICATION, RESET, 2FA
-	ExpiresAt time.Time `gorm:"not null"`
-	IsUsed    bool      `gorm:"default:false"`
+	UserID    uint      `gorm:"column:user_id;index;type:int(11)"`
+	Code      string    `gorm:"column:request_otp;not null"`
+	Type      string    `gorm:"column:request_type;not null"` // VERIFICATION, RESET, 2FA
+	ExpiresAt time.Time `gorm:"column:expires_at;not null"`
+	IsUsed    bool      `gorm:"column:is_used;default:false"`
 	CreatedAt time.Time
+}
+
+func (OTP) TableName() string {
+	return "auth_actions"
 }
 
 // AuditLog tracks sensitive security events.
 // Fintech Standard: Immutable trail of login attempts and profile changes.
 type AuditLog struct {
 	ID        uint      `gorm:"primaryKey;type:int(11)"`
-	UserID    uint      `gorm:"index;type:int(11)"`
+	UserID    uint      `gorm:"column:user_id;index;type:int(11)"`
 	Action    string    `json:"action"` // LOGIN_SUCCESS, LOGIN_FAILURE, PASSWORD_CHANGE
-	IPAddress string    `json:"ip_address"`
+	IPAddress string    `gorm:"column:user_ip" json:"ip_address"`
 	UserAgent string    `json:"user_agent"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+func (AuditLog) TableName() string {
+	return "login_history"
 }
 
 type ConsentAuditLog struct {
