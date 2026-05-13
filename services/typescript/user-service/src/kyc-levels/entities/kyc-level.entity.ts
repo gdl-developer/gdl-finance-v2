@@ -8,7 +8,7 @@ import {
 
 @Entity()
 export class KycLevel {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
   @Column()

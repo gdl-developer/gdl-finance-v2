@@ -23,10 +23,10 @@ export enum PoolType {
 
 @Entity('mmf_investment_request')
 export class InvestmentRequest {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'int', unsigned: true })
   userId: number;
 
   @Column({

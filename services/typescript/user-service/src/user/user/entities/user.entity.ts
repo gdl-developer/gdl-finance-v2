@@ -14,7 +14,7 @@ import {
 
 @Entity()
 export class UserAccount {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
   @Column({ type: 'varchar', length: 30, nullable: true })
@@ -97,6 +97,9 @@ export class UserAccount {
   @ManyToOne(() => KycLevel)
   @JoinColumn({ name: 'kyc_level_id' })
   kyc_level: KycLevel;
+
+  @Column({ type: 'int', unsigned: true, nullable: true })
+  kyc_level_id: number;
 
   @Column({ nullable: true })
   gender: GenderTypes;
