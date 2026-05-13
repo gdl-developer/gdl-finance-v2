@@ -18,7 +18,7 @@ export class ReportingService implements OnModuleInit {
     this.reportingService =
       this.client.getService<ReportingServiceClient>('ReportingService');
   }
-
+  //This is a test report
   getDashboardStats(isSuperAdmin: boolean) {
     return this.reportingService.getDashboardStats(
       { isSuperAdmin },
