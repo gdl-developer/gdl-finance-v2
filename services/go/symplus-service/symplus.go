@@ -45,7 +45,7 @@ func (s *server) GetFunds(ctx context.Context, req *pb.Empty) (*pb.SymplusRespon
 }
 
 func (s *server) GetFundAccounts(ctx context.Context, req *pb.FundAccountRequest) (*pb.SymplusResponse, error) {
-	path := fmt.Sprintf("/GetFundAccounts/%s", req.CustomerId)
+	path := fmt.Sprintf("/GetFundAccounts/%s/", req.CustomerId)
 	return s.client.call("GET", path, nil)
 }
 
