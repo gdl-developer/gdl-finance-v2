@@ -1,6 +1,6 @@
 module github.com/gdl/account-service
 
-go 1.21
+go 1.25.0
 
 require (
 	github.com/alicebob/miniredis/v2 v2.38.0
