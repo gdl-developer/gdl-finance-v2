@@ -9,7 +9,7 @@ import (
 // KYCLevel defines transaction limits and requirements for each tier.
 // Fintech Standard: CBN Tiered KYC compliance.
 type KYCLevel struct {
-	ID           uint    `gorm:"primaryKey;type:int(11)"`
+	ID           uint    `gorm:"primaryKey;type:int(11) unsigned"`
 	Level        int     `gorm:"uniqueIndex"`                           // 1, 2, 3
 	Name         string  `gorm:"type:varchar(50);not null" json:"name"` // BRONZE, SILVER, GOLD
 	DailyLimit   float64 `json:"daily_limit"`
@@ -41,7 +41,7 @@ type SecurityQuestion struct {
 
 // User represents the core user account in the system.
 type User struct {
-	ID                 uint    `gorm:"primaryKey;type:int(11)" json:"id"`
+	ID                 uint    `gorm:"primaryKey;type:int(11) unsigned" json:"id"`
 	Email              string  `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
 	PasswordHash       string  `gorm:"column:password;not null" json:"-"`
 	FirstName          string  `gorm:"column:first_name" json:"first_name"`
@@ -53,7 +53,7 @@ type User struct {
 	UserType           string  `gorm:"column:user_type;default:'USER'" json:"user_type"`
 
 	// Corporate Linking
-	CompanyID *uint    `gorm:"type:int(11)" json:"company_id"`
+	CompanyID *uint    `gorm:"type:int(11) unsigned" json:"company_id"`
 	Company   *Company `json:"company"`
 
 	// Security PINs (Hashed)
@@ -65,7 +65,7 @@ type User struct {
 	EncryptedPhone string `json:"-"`
 
 	// KYC
-	KYCLevelID uint     `gorm:"type:int(11)" json:"kyc_level_id"`
+	KYCLevelID uint     `gorm:"type:int(11) unsigned" json:"kyc_level_id"`
 	KYCLevel   KYCLevel `json:"kyc_level"`
 
 	// GDPR/NDPR Compliance
@@ -91,7 +91,7 @@ type User struct {
 	UserTxnRef          string `json:"user_txn_ref"`
 
 	// RBAC
-	RoleID uint `gorm:"type:int(11)" json:"role_id"`
+	RoleID uint `gorm:"type:int(11) unsigned" json:"role_id"`
 	Role   Role `json:"role"`
 
 	LastLoginIP string         `json:"last_login_ip"`
@@ -106,7 +106,7 @@ func (User) TableName() string {
 }
 
 type Company struct {
-	ID              uint           `gorm:"primaryKey;type:int(11)" json:"id"`
+	ID              uint           `gorm:"primaryKey;type:int(11) unsigned" json:"id"`
 	Name            string         `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
 	RegistrationNum string         `gorm:"type:varchar(255);uniqueIndex" json:"registration_num"` // RC Number
 	TaxID           string         `json:"tax_id"`
@@ -119,15 +119,15 @@ type Company struct {
 }
 
 type CompanyUser struct {
-	ID        uint   `gorm:"primaryKey;type:int(11)"`
-	CompanyID uint   `gorm:"index;type:int(11)"`
-	UserID    uint   `gorm:"index;type:int(11)"`
+	ID        uint   `gorm:"primaryKey;type:int(11) unsigned"`
+	CompanyID uint   `gorm:"index;type:int(11) unsigned"`
+	UserID    uint   `gorm:"index;type:int(11) unsigned"`
 	Role      string `json:"role"` // OWNER, ADMIN, SIGNATORY
 	CreatedAt time.Time
 }
 
 type Role struct {
-	ID          uint         `gorm:"primaryKey;type:int(11)" json:"id"`
+	ID          uint         `gorm:"primaryKey;type:int(11) unsigned" json:"id"`
 	Name        string       `gorm:"type:varchar(100);uniqueIndex;not null" json:"name"` // ADMIN, USER, COMPLIANCE
 	Permissions []Permission `gorm:"many2many:role_permissions;" json:"permissions"`
 	CreatedAt   time.Time    `json:"created_at"`
@@ -135,26 +135,26 @@ type Role struct {
 }
 
 type Permission struct {
-	ID          uint      `gorm:"primaryKey;type:int(11)" json:"id"`
+	ID          uint      `gorm:"primaryKey;type:int(11) unsigned" json:"id"`
 	Name        string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"name"` // USER_CREATE, ACCOUNT_VIEW
 	Description string    `gorm:"type:varchar(255)" json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
 type BusinessUnit struct {
-	ID        uint     `gorm:"primaryKey;type:int(11)" json:"id"`
+	ID        uint     `gorm:"primaryKey;type:int(11) unsigned" json:"id"`
 	Name      string   `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
-	ManagerID uint     `gorm:"type:int(11)" json:"manager_id"`
+	ManagerID uint     `gorm:"type:int(11) unsigned" json:"manager_id"`
 	Branches  []Branch `json:"branches"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 type Branch struct {
-	ID             uint         `gorm:"primaryKey;type:int(11)" json:"id"`
+	ID             uint         `gorm:"primaryKey;type:int(11) unsigned" json:"id"`
 	Name           string       `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
 	Address        string       `json:"address"`
-	BusinessUnitID uint         `gorm:"type:int(11)" json:"business_unit_id"`
+	BusinessUnitID uint         `gorm:"type:int(11) unsigned" json:"business_unit_id"`
 	BusinessUnit   BusinessUnit `json:"-"`
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -163,8 +163,8 @@ type Branch struct {
 // OTP represents One-Time Passwords for email verification, password reset, and 2FA.
 // OWASP: Short-lived, used once, hashed if sensitive.
 type OTP struct {
-	ID        uint      `gorm:"primaryKey;type:int(11)"`
-	UserID    uint      `gorm:"column:user_id;index;type:int(11)"`
+	ID        uint      `gorm:"primaryKey;type:int(11) unsigned"`
+	UserID    uint      `gorm:"column:user_id;index;type:int(11) unsigned"`
 	Code      string    `gorm:"column:request_otp;not null"`
 	Type      string    `gorm:"column:request_type;not null"` // VERIFICATION, RESET, 2FA
 	ExpiresAt time.Time `gorm:"column:expires_at;not null"`
@@ -179,8 +179,8 @@ func (OTP) TableName() string {
 // AuditLog tracks sensitive security events.
 // Fintech Standard: Immutable trail of login attempts and profile changes.
 type AuditLog struct {
-	ID        uint      `gorm:"primaryKey;type:int(11)"`
-	UserID    uint      `gorm:"column:user_id;index;type:int(11)"`
+	ID        uint      `gorm:"primaryKey;type:int(11) unsigned"`
+	UserID    uint      `gorm:"column:user_id;index;type:int(11) unsigned"`
 	Action    string    `json:"action"` // LOGIN_SUCCESS, LOGIN_FAILURE, PASSWORD_CHANGE
 	IPAddress string    `gorm:"column:user_ip" json:"ip_address"`
 	UserAgent string    `json:"user_agent"`
@@ -192,8 +192,8 @@ func (AuditLog) TableName() string {
 }
 
 type ConsentAuditLog struct {
-	ID                    uint      `gorm:"primaryKey;type:int(11)"`
-	UserID                uint      `gorm:"index;type:int(11)"`
+	ID                    uint      `gorm:"primaryKey;type:int(11) unsigned"`
+	UserID                uint      `gorm:"index;type:int(11) unsigned"`
 	TermsAccepted         bool      `json:"terms_accepted"`
 	PrivacyPolicyAccepted bool      `json:"privacy_policy_accepted"`
 	MarketingConsent      bool      `json:"marketing_consent"`
