@@ -214,11 +214,16 @@ func (s *server) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb
 		permissions = append(permissions, p.Name)
 	}
 
+	phone := ""
+	if user.PhoneNumber != nil {
+		phone = *user.PhoneNumber
+	}
+
 	return &pb.GetProfileResponse{
 		Email:       user.Email,
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
-		PhoneNumber: user.PhoneNumber,
+		PhoneNumber: phone,
 		Status:      user.Status,
 		UserType:    user.AccountType,
 		Role: &pb.RoleInfo{
