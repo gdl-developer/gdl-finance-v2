@@ -36,11 +36,11 @@ type SecurityQuestion struct {
 // User represents the core user account in the system.
 type User struct {
 	ID                 uint    `gorm:"primaryKey" json:"id"`
-	Email              string  `gorm:"uniqueIndex;not null" json:"email"`
+	Email              string  `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
 	PasswordHash       string  `gorm:"not null" json:"-"`
 	FirstName          string  `json:"first_name"`
 	LastName           string  `json:"last_name"`
-	PhoneNumber        *string `gorm:"uniqueIndex" json:"phone_number"`
+	PhoneNumber        *string `gorm:"type:varchar(255);uniqueIndex" json:"phone_number"`
 	Status             string  `gorm:"default:'PENDING_VERIFICATION'" json:"status"`
 	AccountType        string  `gorm:"default:'INDIVIDUAL'" json:"account_type"` // INDIVIDUAL or CORPORATE
 	IsTwoFactorEnabled bool    `gorm:"default:false" json:"is_2fa_enabled"`

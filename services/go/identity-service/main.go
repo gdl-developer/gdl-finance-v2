@@ -519,7 +519,9 @@ func main() {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	db.AutoMigrate(&User{}, &Role{}, &Permission{}, &BusinessUnit{}, &Branch{}, &OTP{}, &AuditLog{}, &ConsentAuditLog{}, &KYCLevel{}, &SecurityQuestion{}, &UserSecurityQuestion{}, &Company{}, &CompanyUser{})
+	if err := db.AutoMigrate(&User{}, &Role{}, &Permission{}, &BusinessUnit{}, &Branch{}, &OTP{}, &AuditLog{}, &ConsentAuditLog{}, &KYCLevel{}, &SecurityQuestion{}, &UserSecurityQuestion{}, &Company{}, &CompanyUser{}); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
+	}
 	SeedIdentityData(db)
 
 	log.Println("Starting Identity Service (Go)...")
