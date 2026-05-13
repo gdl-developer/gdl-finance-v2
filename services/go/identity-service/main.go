@@ -53,9 +53,28 @@ type server struct {
 }
 
 func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	// 1. Check if email already exists
+	var existingUser User
+	if err := s.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		return &pb.RegisterResponse{Success: false, Message: "Email already exists"}, nil
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to hash password")
+	}
+
+	// 2. Find default Role (USER)
+	var role Role
+	if err := s.db.Where("name = ?", "USER").First(&role).Error; err != nil {
+		// Fallback to ID 1 if seeder hasn't run or table is empty
+		role.ID = 1
+	}
+
+	// 3. Find default KYC Level (BRONZE/Level 1)
+	var kyc KYCLevel
+	if err := s.db.Where("level = ?", 1).First(&kyc).Error; err != nil {
+		kyc.ID = 1
 	}
 
 	now := time.Now()
@@ -63,6 +82,8 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 		Email:                 req.Email,
 		PasswordHash:          string(hashedPassword),
 		Status:                "INACTIVE",
+		RoleID:                role.ID,
+		KYCLevelID:            kyc.ID,
 		TermsAccepted:         req.TermsAccepted,
 		PrivacyPolicyAccepted: req.PrivacyPolicyAccepted,
 		MarketingConsent:      req.MarketingConsent,
@@ -72,11 +93,9 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create user")
+		log.Printf("[Auth] Failed to create user: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
-
-	// In a real system, we would trigger an OTP email here.
-	// For now, we assume the VerifyOTP RPC will be called next.
 
 	return &pb.RegisterResponse{
 		Success: true,
