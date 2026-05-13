@@ -25,7 +25,7 @@ export class InvestmentService {
 
     const request = this.investmentRepository.create({
       ...dto,
-      userId,
+      userId: Number(userId),
       reference,
       status: InvestmentStatus.PENDING,
     });
@@ -40,13 +40,15 @@ export class InvestmentService {
 
   async findAll(userId: string) {
     return this.investmentRepository.find({
-      where: { userId },
+      where: { userId: Number(userId) },
       order: { created_at: 'DESC' },
     });
   }
 
   async findOne(id: number, userId: string) {
-    return this.investmentRepository.findOne({ where: { id, userId } });
+    return this.investmentRepository.findOne({
+      where: { id, userId: Number(userId) },
+    });
   }
 
   async updateStatus(
