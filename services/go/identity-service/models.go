@@ -46,7 +46,7 @@ type User struct {
 	PasswordHash       string  `gorm:"column:password;not null" json:"-"`
 	FirstName          string  `gorm:"column:first_name" json:"first_name"`
 	LastName           string  `gorm:"column:last_name" json:"last_name"`
-	PhoneNumber        *string `gorm:"column:phone;type:varchar(255);uniqueIndex" json:"phone_number"`
+	PhoneNumber        *string `gorm:"column:phone;type:varchar(255);index" json:"phone_number"`
 	Status             string  `gorm:"column:account_status;default:'PENDING_VERIFICATION'" json:"status"`
 	AccountType        string  `gorm:"column:account_type;default:'INDIVIDUAL'" json:"account_type"` // INDIVIDUAL or CORPORATE
 	IsTwoFactorEnabled bool    `gorm:"column:is_2fa_enabled;default:false" json:"is_2fa_enabled"`
