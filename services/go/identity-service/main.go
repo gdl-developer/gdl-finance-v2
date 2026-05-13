@@ -56,7 +56,7 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 	// 1. Check if email already exists
 	var existingUser User
 	if err := s.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-		return &pb.RegisterResponse{Success: false, Message: "Email already exists"}, nil
+		return nil, status.Errorf(codes.AlreadyExists, "Email already exists")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
