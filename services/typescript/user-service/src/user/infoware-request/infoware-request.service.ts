@@ -23,7 +23,12 @@ export class InfowareService implements OnModuleInit, OnModuleDestroy {
     private readonly externalApiCallsService: ExternalApiCallsService,
     private readonly configService: ConfigService,
   ) {
-    this.baseUrl = this.configService.get<string>('SYMPLUS_SERVICE_BASE_URL');
+    const rawBaseUrl = this.configService.get<string>(
+      'SYMPLUS_SERVICE_BASE_URL',
+    );
+    this.baseUrl = rawBaseUrl.endsWith('/')
+      ? `${rawBaseUrl}symplus-service`
+      : `${rawBaseUrl}/symplus-service`;
   }
 
   /**
@@ -94,6 +99,24 @@ export class InfowareService implements OnModuleInit, OnModuleDestroy {
     return this.handleRequest('post', '/infoweb-api/customers', dto);
   }
 
+  async getCustomerByEmail(email: string) {
+    return this.handleRequest(
+      'get',
+      `/infoweb-api/customer/search/email`,
+      null,
+      { email },
+    );
+  }
+
+  async getCustomerByPhone(phone: string) {
+    return this.handleRequest(
+      'get',
+      `/infoweb-api/customer/search/phone`,
+      null,
+      { phone },
+    );
+  }
+
   async getCustomerInfo(customerId: number, infoCode?: number) {
     return this.handleRequest(
       'get',
@@ -111,7 +134,7 @@ export class InfowareService implements OnModuleInit, OnModuleDestroy {
   }
 
   // -------------------
-  // Customer Involvement
+  // Customer Involvement implementations
   // -------------------
   async createCustomerInvolvement(
     customerId: number,

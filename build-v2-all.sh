@@ -16,19 +16,19 @@ GO_SERVICES=(
   "notification-service:notification-service"
   "reporting-service:reporting-service"
   "symplus-connector:symplus-connector"
-  "symplus-service:symplus-service"
   "transaction-service:transaction-service"
 )
 
 TS_SERVICES=(
-  "api-gateway:./services/typescript/api-gateway"
-  "dms-service:./services/typescript/dms-service"
-  "flexi-service:./services/typescript/flexi-service"
-  "hpa-service:./services/typescript/hpa-service"
-  "investment-service:./services/typescript/investment-service"
-  "loan-service:./services/typescript/loan-service"
-  "saveinvest-service:./services/typescript/saveinvest-service"
-  "user-service:./services/typescript/user-service"
+  "api-gateway:."
+  "dms-service:."
+  "flexi-service:."
+  "hpa-service:."
+  "investment-service:."
+  "loan-service:."
+  "saveinvest-service:."
+  "user-service:."
+  "symplus-integration-service:./services/typescript/symplus-integration-service"
 )
 
 echo "Starting build process at $(date)" | tee $LOG_FILE
@@ -44,15 +44,19 @@ build_and_push() {
   local full_tag="${REGISTRY}/${name}:${TAG}"
 
   echo "---------------------------------------------------" | tee -a $LOG_FILE
-  echo "Building ${name} from ${path}..." | tee -a $LOG_FILE
+  echo "Building ${name} from context ${path}..." | tee -a $LOG_FILE
   [ -n "$build_arg" ] && echo "With build-arg SERVICE_DIR=${build_arg}" | tee -a $LOG_FILE
   echo "---------------------------------------------------" | tee -a $LOG_FILE
 
+  local dockerfile_path="${path}/Dockerfile"
   if [ -n "$build_arg" ]; then
-    docker build --no-cache --platform ${PLATFORM} -t ${full_tag} --build-arg SERVICE_DIR=${build_arg} -f ${path}/${build_arg}/Dockerfile ${path} 2>&1 | tee -a $LOG_FILE
-  else
-    docker build --no-cache --platform ${PLATFORM} -t ${full_tag} ${path} 2>&1 | tee -a $LOG_FILE
+    dockerfile_path="${path}/${build_arg}/Dockerfile"
   fi
+
+  # Removed --no-cache to speed up builds
+  docker build --platform ${PLATFORM} -t ${full_tag} \
+    ${build_arg:+--build-arg SERVICE_DIR=$build_arg} \
+    -f "${dockerfile_path}" "${path}" 2>&1 | tee -a $LOG_FILE
   
   if [ ${PIPESTATUS[0]} -ne 0 ]; then
     echo "Error: Build failed for ${name}" | tee -a $LOG_FILE
@@ -85,7 +89,22 @@ done
 # Build TS Services
 for service in "${TS_SERVICES[@]}"; do
   IFS=":" read -r name path <<< "${service}"
-  build_and_push "${name}" "${path}" ""
+  # For services built from root, the Dockerfile is inside its subdirectory
+  if [ "$path" == "." ]; then
+     # Logic: Dockerfile is at ./services/typescript/$name/Dockerfile
+     docker build --platform ${PLATFORM} -t ${REGISTRY}/${name}:${TAG} \
+       -f ./services/typescript/${name}/Dockerfile . 2>&1 | tee -a $LOG_FILE
+     
+     if [ ${PIPESTATUS[0]} -eq 0 ]; then
+       echo "Pushing ${REGISTRY}/${name}:${TAG}..." | tee -a $LOG_FILE
+       docker push ${REGISTRY}/${name}:${TAG} 2>&1 | tee -a $LOG_FILE
+     else
+       echo "Error: Build failed for ${name}" | tee -a $LOG_FILE
+       FAILED_SERVICES+=("${name}")
+     fi
+  else
+     build_and_push "${name}" "${path}" ""
+  fi
 done
 
 echo "---------------------------------------------------" | tee -a $LOG_FILE

@@ -25,7 +25,10 @@ export class SymplusProxyController {
     private readonly envService: EnvService,
   ) {
     const env = this.envService.read();
-    this.symplusBaseUrl = env.SYMPLUS_SERVICE_BASE_URL;
+    const rawBaseUrl = env.SYMPLUS_SERVICE_BASE_URL;
+    this.symplusBaseUrl = rawBaseUrl.endsWith('/')
+      ? `${rawBaseUrl}symplus-service`
+      : `${rawBaseUrl}/symplus-service`;
   }
 
   @All('symplus/api/requests/*')
@@ -35,7 +38,7 @@ export class SymplusProxyController {
     @Body() body: any,
     @Query() query: any,
   ) {
-    const path = req.path; // e.g. /symplus/api/requests/get-fund-price
+    const path = req.path;
     const url = `${this.symplusBaseUrl}${path}`;
 
     this.logger.log(`Proxying ${req.method} request to ${url}`);

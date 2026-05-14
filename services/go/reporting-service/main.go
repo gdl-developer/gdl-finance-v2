@@ -78,6 +78,7 @@ func (s *server) GetDashboardStats(ctx context.Context, req *pb.DashboardRequest
 	s.db.Table("user_accounts").Count(&totalUsers)
 	generalStats.TotalUsers = int32(totalUsers)
 
+	// Flexi Stats
 	s.db.Raw(`
 		SELECT 
 			COALESCE(SUM(CASE WHEN status = 'PENDING_APPROVAL' THEN amount ELSE 0 END), 0) as pending_amount,
@@ -88,8 +89,19 @@ func (s *server) GetDashboardStats(ctx context.Context, req *pb.DashboardRequest
 		FROM flexi_requests
 	`).Scan(&flexiStats)
 
-	assetStats.TotalAum = 5000000.00
-	assetStats.TotalSubscribers = 1200
+	// Asset Management Stats (Aggregate from MMF, Canary, Income)
+	// We use COALESCE(price, amount) because different entities use different field names for value
+	s.db.Raw(`
+		SELECT 
+			(SELECT COALESCE(SUM(COALESCE(price, amount)), 0) FROM mmf_investment_requests WHERE status IN ('APPROVED', 'COMPLETED')) +
+			(SELECT COALESCE(SUM(COALESCE(price, amount)), 0) FROM canary_investment_requests WHERE status IN ('APPROVED', 'COMPLETED')) +
+			(SELECT COALESCE(SUM(COALESCE(price, amount)), 0) FROM income_investment_requests WHERE status IN ('APPROVED', 'COMPLETED')) 
+			as total_aum,
+			(SELECT COUNT(DISTINCT user_id) FROM mmf_investment_requests) +
+			(SELECT COUNT(DISTINCT user_id) FROM canary_investment_requests) +
+			(SELECT COUNT(DISTINCT user_id) FROM income_investment_requests)
+			as total_subscribers
+	`).Row().Scan(&assetStats.TotalAum, &assetStats.TotalSubscribers)
 
 	return &pb.DashboardResponse{
 		Flexi:           &flexiStats,
@@ -100,10 +112,11 @@ func (s *server) GetDashboardStats(ctx context.Context, req *pb.DashboardRequest
 
 func (s *server) GetUserGrowth(ctx context.Context, req *pb.UserGrowthRequest) (*pb.UserGrowthResponse, error) {
 	var points []*pb.GrowthPoint
+	// Fix for MySQL: Use DATE_FORMAT instead of TO_CHAR
 	s.db.Raw(`
-		SELECT TO_CHAR(created_at, 'YYYY-MM-DD') as date, COUNT(*) as count 
+		SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as date, COUNT(*) as count 
 		FROM user_accounts 
-		WHERE created_at >= NOW() - INTERVAL '7 days'
+		WHERE created_at >= NOW() - INTERVAL 7 DAY
 		GROUP BY date 
 		ORDER BY date ASC
 	`).Scan(&points)

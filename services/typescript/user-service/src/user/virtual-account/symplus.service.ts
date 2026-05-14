@@ -36,7 +36,10 @@ export class SymplusService {
     private readonly infowareService: InfowareService,
   ) {
     const envData = this.envService.read();
-    this.symplusBaseUrl = envData.SYMPLUS_SERVICE_BASE_URL;
+    const rawBaseUrl = envData.SYMPLUS_SERVICE_BASE_URL;
+    this.symplusBaseUrl = rawBaseUrl.endsWith('/')
+      ? `${rawBaseUrl}symplus-service`
+      : `${rawBaseUrl}/symplus-service`;
     this.encryptionKey = envData.EKY;
     this.logger.log(
       `Initialized SymplusService with base URL: ${this.symplusBaseUrl}`,
@@ -187,26 +190,143 @@ export class SymplusService {
         throw new InternalServerErrorException('User not found');
       }
 
-      this.logger.log(
-        `Retrieved user data for Symplus customer creation: ${user.email}`,
-      );
+      // --- EXPLICIT CHECK: See if user already exists in Symplus (which might have their legacy ID) ---
+      try {
+        const emailCheckUrl = `${this.symplusBaseUrl}/customer/email/${user.email}`;
+        this.logger.log(
+          `Checking Infoware existence via Symplus email search: ${emailCheckUrl}`,
+        );
+        const emailResponse = await this.externalApiCallsService.getData(
+          emailCheckUrl,
+        );
+
+        if (
+          emailResponse &&
+          !emailResponse.error &&
+          emailResponse.data &&
+          emailResponse.data.reference &&
+          emailResponse.data.reference.CustomerID
+        ) {
+          const existingId = emailResponse.data.reference.CustomerID;
+          this.logger.log(
+            `User already exists in Symplus reference. Found legacy ID: ${existingId}`,
+          );
+
+          // Update virtual wallet with the existing ID and return
+          await this.updateVirtualWalletWithInfowareData(
+            virtualWalletId,
+            existingId,
+          );
+
+          return {
+            success: true,
+            message: 'Customer found directly on Infoware',
+            customer_id: existingId,
+            data: { OutValue: existingId },
+          };
+        }
+      } catch (checkError) {
+        this.logger.warn(
+          `Pre-creation check failed (non-fatal): ${checkError.message}`,
+        );
+      }
+
+      // --- EXPLICIT CHECK 2: See if user already exists directly on Infoware ---
+      try {
+        this.logger.log(
+          `Searching Infoware directly for existing customer: ${user.email}`,
+        );
+        const infowareSearchResponse: any =
+          await this.infowareService.getCustomerByEmail(user.email);
+
+        // Infoware search response structure usually has a DataTable or OutValue
+        let existingId = infowareSearchResponse?.data?.OutValue;
+
+        // Fallback to DataTable if OutValue is missing
+        if (
+          !existingId &&
+          infowareSearchResponse?.data?.DataTable &&
+          infowareSearchResponse.data.DataTable.length > 0
+        ) {
+          existingId =
+            infowareSearchResponse.data.DataTable[0].CustomerNo ||
+            infowareSearchResponse.data.DataTable[0].CustomerID;
+        }
+
+        if (existingId) {
+          this.logger.log(`User found directly on Infoware. ID: ${existingId}`);
+          await this.updateVirtualWalletWithInfowareData(
+            virtualWalletId,
+            existingId,
+          );
+          return {
+            success: true,
+            message: 'Customer found directly on Infoware',
+            customer_id: existingId,
+            data: { OutValue: existingId },
+          };
+        }
+      } catch (checkError) {
+        this.logger.warn(
+          `Infoware direct search failed (non-fatal): ${checkError.message}`,
+        );
+      }
+
+      // --- EXPLICIT CHECK 3: See if user already exists via Phone search ---
+      try {
+        const normalizedPhone = user.phone
+          .replace(/^\+/, '')
+          .replace(/^0/, '234');
+        this.logger.log(`Searching Infoware via Phone: ${normalizedPhone}`);
+        const phoneSearchResponse: any =
+          await this.infowareService.getCustomerByPhone(normalizedPhone);
+
+        let existingId = phoneSearchResponse?.data?.OutValue;
+
+        // Fallback to DataTable
+        if (
+          !existingId &&
+          phoneSearchResponse?.data?.DataTable &&
+          phoneSearchResponse.data.DataTable.length > 0
+        ) {
+          existingId =
+            phoneSearchResponse.data.DataTable[0].CustomerNo ||
+            phoneSearchResponse.data.DataTable[0].CustomerID;
+        }
+
+        if (existingId) {
+          this.logger.log(`User found via Phone search. ID: ${existingId}`);
+          await this.updateVirtualWalletWithInfowareData(
+            virtualWalletId,
+            existingId,
+          );
+          return {
+            success: true,
+            message: 'Customer found via Phone search',
+            customer_id: existingId,
+            data: { OutValue: existingId },
+          };
+        }
+      } catch (checkError) {
+        this.logger.warn(
+          `Infoware phone search failed (non-fatal): ${checkError.message}`,
+        );
+      }
 
       const customerPayload = this.createInfowarePayload(
         user,
         fetchUserNuban,
         wallet,
       );
-      console.log(
-        `Created infoware payload:`,
-        JSON.stringify(customerPayload, null, 2),
+      this.logger.log(
+        `Created infoware payload: ${JSON.stringify(customerPayload)}`,
       );
 
       const response = await this.infowareService.createCustomer(
         customerPayload,
       );
-      console.log(
-        `Created infoware payload:`,
-        JSON.stringify(response, null, 2),
+      this.logger.log(
+        `Infoware creation response: ${JSON.stringify(response)}`,
       );
 
       const validatedResponse = this.validateInfowareResponse(response);
@@ -270,8 +390,9 @@ export class SymplusService {
       }
 
       // 🧠 Decrypt
-      const decryptedCustomerId = wallet.encrypted_symplus_customer_id;
       // Note: User requested to stop encrypting/decrypting this field (2026-01-30)
+      // We now treat the stored value as plain text.
+      const decryptedCustomerId = wallet.encrypted_symplus_customer_id;
 
       console.log(`decryptedCustomerId (raw):`, decryptedCustomerId);
 
@@ -415,14 +536,20 @@ export class SymplusService {
 
     // --- Phone Normalization ---
     let phoneNumber = user.phone;
-    if (phoneNumber && !phoneNumber.startsWith('+')) {
-      phoneNumber = '+234' + phoneNumber.replace(/^0/, '');
+    if (phoneNumber) {
+      phoneNumber = phoneNumber.replace(/^\+/, '').replace(/^0/, '234');
+      if (!phoneNumber.startsWith('234')) {
+        phoneNumber = '234' + phoneNumber;
+      }
     }
 
     // --- Alternate Phone ---
     let altPhone = user.alternate_phone_no;
-    if (altPhone && !altPhone.startsWith('+')) {
-      altPhone = '+234' + altPhone.replace(/^0/, '');
+    if (altPhone) {
+      altPhone = altPhone.replace(/^\+/, '').replace(/^0/, '234');
+      if (!altPhone.startsWith('234')) {
+        altPhone = '234' + altPhone;
+      }
     }
 
     // --- Default Country ---
@@ -430,7 +557,16 @@ export class SymplusService {
     const nationality = user.country;
 
     // --- Bank Info ---
-    const bankCode = fetchUserNuban?.nuban_source || wallet?.bankCode || '057';
+    const bankCodeRaw =
+      fetchUserNuban?.nuban_source || wallet?.bankCode || '057';
+
+    // Normalize bank code to 3 characters (Requirement of Infoware/Integration DTO)
+    let bankCode = bankCodeRaw;
+    if (bankCode === 'BANKONE') {
+      bankCode = '001'; // GDL internal branch code as default
+    } else if (bankCode.length > 3) {
+      bankCode = bankCode.substring(0, 3);
+    }
     const bankAcctNumber =
       fetchUserNuban?.nuban_account || wallet?.accountNumber || '0000000000';
     const bankAcctName = `${user.first_name || ''} ${user.other_names || ''} ${
@@ -528,12 +664,19 @@ export class SymplusService {
     }
 
     // Validate successful response structure
-    if (!response.data || !response.data.OutValue || !response.data.OutValue) {
+    const custId =
+      response.customer_id ||
+      response.data?.OutValue ||
+      response.data?.outValue;
+
+    if (!custId) {
       this.logger.error(
-        `Invalid Symplus response structure:`,
+        `Invalid Symplus response structure (missing CustomerID):`,
         JSON.stringify(response, null, 2),
       );
-      throw new InternalServerErrorException('An Eerror Occurred');
+      throw new InternalServerErrorException(
+        'Customer ID not found in core banking response',
+      );
     }
 
     this.logger.log('Symplus response validation successful');

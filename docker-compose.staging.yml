@@ -169,5 +169,14 @@ services:
       - "3080:3080"
     env_file: .env.staging
 
+  symplus-integration-service:
+    image: registry.digitalocean.com/gdlfinancev2/symplus-integration-service:staging
+    restart: always
+    environment:
+      - PORT=3010
+    ports:
+      - "3010:3010"
+    env_file: .env.staging
+
 volumes:
   pg_data:

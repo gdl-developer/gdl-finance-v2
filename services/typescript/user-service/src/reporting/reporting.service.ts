@@ -78,10 +78,15 @@ export class ReportingService {
 
   async dashboardStats(isSuperAdmin = true) {
     const getStats = async (service: any) => {
-      const stats = await service.investmentRequestRepository
+      const repo =
+        service.investmentRequestRepository || service.repository || service;
+      const stats = await repo
         .createQueryBuilder('request')
         .select('request.status', 'status')
-        .addSelect('SUM(request.price)', 'total_amount')
+        .addSelect(
+          'SUM(COALESCE(request.price, request.amount))',
+          'total_amount',
+        )
         .groupBy('request.status')
         .getRawMany();
 
@@ -97,7 +102,9 @@ export class ReportingService {
     };
 
     const getSubscriberCount = async (service: any) => {
-      const result = await service.investmentRequestRepository
+      const repo =
+        service.investmentRequestRepository || service.repository || service;
+      const result = await repo
         .createQueryBuilder('request')
         .select('COUNT(DISTINCT request.user_id)', 'count')
         .getRawOne();
@@ -166,9 +173,11 @@ export class ReportingService {
       service: any,
       bounds: { start: any; end: any },
     ) => {
-      const result = await service.investmentRequestRepository
+      const repo =
+        service.investmentRequestRepository || service.repository || service;
+      const result = await repo
         .createQueryBuilder('request')
-        .select('SUM(request.price)', 'total_amount')
+        .select('SUM(COALESCE(request.price, request.amount))', 'total_amount')
         .where('request.created_at BETWEEN :start AND :end', {
           start: bounds.start,
           end: bounds.end,

@@ -1,0 +1,247 @@
+{
+  "info": {
+    "name": "RubyPay API",
+    "_postman_id": "b57b6e2c-1a7c-4e21-b5b8-9f2a6d72c8aa",
+    "description": "Postman collection for RubyPay API v1.0.1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Virtual Account",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/createvirtualaccount",
+          "host": ["{{baseUrl}}"],
+          "path": ["createvirtualaccount"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"virtualaccountname\": \"ADA CHINWE AYO\",\n  \"amountcontrol\": \"VARIABLEAMOUNT\",\n  \"email\": \"test@yahoo.com\",\n  \"mobilenumber\": \"07057987704\",\n  \"settlementaccount\": \"7066353202\",\n  \"amount\": \"1\",\n  \"daysactive\": \"60000\",\n  \"minutesactive\": \"60000\",\n  \"bankcode\": \"000024\",\n  \"extradata\": \"\",\n  \"settlementaccountname\": \"INVESTMENT ACCOUNT\",\n  \"callbackurl\": \"https://enebejapskkl.x.pipedream.net\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Get Virtual Account Details",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/getvirtualaccount",
+          "host": ["{{baseUrl}}"],
+          "path": ["getvirtualaccount"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"virtualaccount\": \"6190053928\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Update Callback URL",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/updatecallbackurl",
+          "host": ["{{baseUrl}}"],
+          "path": ["updatecallbackurl"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"virtualaccount\": \"6190053928\",\n  \"callbackurl\": \"https://example.m.pipedream1.net\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Disable Virtual Account",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/disablevirtualaccount",
+          "host": ["{{baseUrl}}"],
+          "path": ["disablevirtualaccount"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"virtualaccount\": \"6190053928\"\n}"
+        }
+      }
+    },
+    {
+      "name": "List Virtual Accounts",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/listvirtualaccounts",
+          "host": ["{{baseUrl}}"],
+          "path": ["listvirtualaccounts"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"request\": \"listaccounts\",\n  \"page\": 1\n}"
+        }
+      }
+    },
+    {
+      "name": "Day Transactions List",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/daytransactionslist",
+          "host": ["{{baseUrl}}"],
+          "path": ["daytransactionslist"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"settlementaccount\": \"00010000010\",\n  \"trandate\": \"08-sep-2023\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Confirm Callback Transaction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/confirmcallbacktransaction",
+          "host": ["{{baseUrl}}"],
+          "path": ["confirmcallbacktransaction"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paymentreference\": \"000013200217045801000061575825\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Get Virtual Transaction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/getvirtualTransaction",
+          "host": ["{{baseUrl}}"],
+          "path": ["getvirtualTransaction"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionid\": \"000013230926135405000150883770\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Check Payment Status",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/checkpaymentstatus",
+          "host": ["{{baseUrl}}"],
+          "path": ["checkpaymentstatus"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"virtualaccount\": \"6190053928\",\n  \"amount\": \"100\"\n}"
+        }
+      }
+    },
+    {
+      "name": "List Transactions",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{rubypaytoken}}",
+            "type": "text"
+          },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/listtransactions",
+          "host": ["{{baseUrl}}"],
+          "path": ["listtransactions"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"virtualaccount\": \"4460284327\",\n  \"page\": 1\n}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://00ocw7ymhj.execute-api.us-west-2.amazonaws.com/openapi"
+    },
+    { "key": "rubypaytoken", "value": "sk_test_xxx" }
+  ]
+}
