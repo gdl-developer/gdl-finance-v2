@@ -544,14 +544,6 @@ func main() {
 
 	log.Println("Starting database migrations...")
 
-	// Aggressive Fix: Clear existing constraints to resolve Error 1826 (Duplicate constraint name)
-	// This ensures GORM can recreate them correctly with the new bigint types.
-	log.Println("[Migration] Clearing legacy foreign key constraints...")
-	db.Exec("ALTER TABLE user_account DROP FOREIGN KEY IF EXISTS fk_companies_users")
-	db.Exec("ALTER TABLE user_account DROP FOREIGN KEY IF EXISTS fk_user_account_role")
-	db.Exec("ALTER TABLE user_account DROP FOREIGN KEY IF EXISTS fk_user_account_kyc_level")
-	db.Exec("ALTER TABLE user_account DROP FOREIGN KEY IF EXISTS fk_user_account_company")
-
 	if err := db.AutoMigrate(&User{}, &Role{}, &Permission{}, &BusinessUnit{}, &Branch{}, &OTP{}, &AuditLog{}, &ConsentAuditLog{}, &KYCLevel{}, &SecurityQuestion{}, &UserSecurityQuestion{}, &Company{}, &CompanyUser{}); err != nil {
 		log.Fatalf("CRITICAL: Database migration failed: %v", err)
 	}

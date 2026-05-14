@@ -54,7 +54,7 @@ type User struct {
 
 	// Corporate Linking
 	CompanyID *uint    `gorm:"type:bigint unsigned" json:"company_id"`
-	Company   *Company `json:"company"`
+	Company   *Company `gorm:"foreignKey:CompanyID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_user_company_corporate;" json:"company"`
 
 	// Security PINs (Hashed)
 	LoginPinHash       string `json:"-"`
@@ -66,7 +66,7 @@ type User struct {
 
 	// KYC
 	KYCLevelID uint     `gorm:"type:bigint unsigned" json:"kyc_level_id"`
-	KYCLevel   KYCLevel `json:"kyc_level"`
+	KYCLevel   KYCLevel `gorm:"foreignKey:KYCLevelID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_user_kyc_level_status;" json:"kyc_level"`
 
 	// GDPR/NDPR Compliance
 	TermsAccepted         bool       `gorm:"default:false" json:"terms_accepted"`
@@ -92,7 +92,7 @@ type User struct {
 
 	// RBAC
 	RoleID uint `gorm:"type:bigint unsigned" json:"role_id"`
-	Role   Role `json:"role"`
+	Role   Role `gorm:"foreignKey:RoleID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_user_role_rbac_mapping;" json:"role"`
 
 	LastLoginIP string         `json:"last_login_ip"`
 	LastLoginAt *time.Time     `json:"last_login_at"`
