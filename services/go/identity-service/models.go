@@ -112,7 +112,7 @@ type Company struct {
 	TaxID           string         `json:"tax_id"`
 	Address         string         `json:"address"`
 	Status          string         `gorm:"default:'PENDING_APPROVAL'" json:"status"`
-	Users           []User         `gorm:"foreignKey:CompanyID" json:"users"`
+	Users           []User         `gorm:"foreignKey:CompanyID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_user_company_corporate;" json:"users"`
 	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
@@ -145,7 +145,7 @@ type BusinessUnit struct {
 	ID        uint     `gorm:"primaryKey;type:bigint unsigned" json:"id"`
 	Name      string   `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
 	ManagerID uint     `gorm:"type:bigint unsigned" json:"manager_id"`
-	Branches  []Branch `json:"branches"`
+	Branches  []Branch `gorm:"foreignKey:BusinessUnitID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_bu_branches;" json:"branches"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -155,7 +155,7 @@ type Branch struct {
 	Name           string       `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
 	Address        string       `json:"address"`
 	BusinessUnitID uint         `gorm:"type:bigint unsigned" json:"business_unit_id"`
-	BusinessUnit   BusinessUnit `json:"-"`
+	BusinessUnit   BusinessUnit `gorm:"foreignKey:BusinessUnitID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_bu_branches;" json:"-"`
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
