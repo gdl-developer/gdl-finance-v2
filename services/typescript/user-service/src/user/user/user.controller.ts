@@ -14,6 +14,7 @@ import {
   Req,
   Delete,
 } from '@nestjs/common';
+import { InternalAuthGuard } from 'src/common/guards/internal-auth.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { SearchUsersDto } from './dto/serach-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -93,6 +94,7 @@ export class UserController {
   }
 
   @Patch('upgrade/kyc')
+  @UseGuards(InternalAuthGuard)
   @AuditLogger('UpgradeUserKyc')
   async upgradeUserKyc(@Body() upgreadeUserKYCDto: UpgreadeUserKYCDto) {
     const u_kyc = await this.userService.upgradeUserKYC(upgreadeUserKYCDto);
@@ -100,8 +102,7 @@ export class UserController {
   }
 
   @Get('approve/docs/:user_id')
-  @UseGuards(AbilitiesGuard)
-  @CheckAbilities({ action: Action.Manage, subject: UserAccount })
+  @UseGuards(InternalAuthGuard)
   @AuditLogger('ApproveUserDocs')
   async approveUserDocs(@Param('user_id') user_id: number) {
     const u_kyc = await this.userService.approveUserDocs(user_id);
@@ -109,6 +110,7 @@ export class UserController {
   }
 
   @Post()
+  @UseGuards(InternalAuthGuard)
   @AuditLogger('CreateUserWallet')
   async createUserWallet(@Body() user_id: number, @Req() req: Request) {
     const client_ip = getClientIp(req);
@@ -239,7 +241,16 @@ export class UserController {
     if (!whoAmmI || !whoAmmI.user_id) {
       throw new NotAcceptableException('Unauthorized Request');
     }
-    return this.userService.deleteUserAccount(whoAmmI.user_id);
+    // For NDPR compliance, we use anonymization by default for user requests
+    return this.userService.anonymizeUserAccount(whoAmmI.user_id);
+  }
+
+  @Post('account/anonymize/:id')
+  @UseGuards(AbilitiesGuard)
+  @CheckAbilities({ action: Action.Delete, subject: UserAccount })
+  @AuditLogger('AdminAnonymizeAccount')
+  async adminAnonymizeAccount(@Param('id') id: string) {
+    return this.userService.anonymizeUserAccount(+id);
   }
 
   @Delete('account/:id')

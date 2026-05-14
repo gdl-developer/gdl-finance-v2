@@ -91,6 +91,36 @@ func main() {
 			continue
 		}
 
+		// Secondary PII Sanitization
+		var attrMap map[string]interface{}
+		if err := json.Unmarshal([]byte(logEntry.Attributes), &attrMap); err == nil {
+			maskFields := []string{"password", "pin", "token", "bvn", "nin", "phone", "account_number", "cvv"}
+			sanitized := false
+			for _, field := range maskFields {
+				if _, ok := attrMap[field]; ok {
+					attrMap[field] = "********"
+					sanitized = true
+				}
+				// Check nested in 'body' or 'res' if present
+				if body, ok := attrMap["body"].(map[string]interface{}); ok {
+					if _, ok := body[field]; ok {
+						body[field] = "********"
+						sanitized = true
+					}
+				}
+				if res, ok := attrMap["res"].(map[string]interface{}); ok {
+					if _, ok := res[field]; ok {
+						res[field] = "********"
+						sanitized = true
+					}
+				}
+			}
+			if sanitized {
+				newAttr, _ := json.Marshal(attrMap)
+				logEntry.Attributes = string(newAttr)
+			}
+		}
+
 		if err := db.Create(&logEntry).Error; err != nil {
 			log.Printf("error saving log entry to DB: %v", err)
 			continue

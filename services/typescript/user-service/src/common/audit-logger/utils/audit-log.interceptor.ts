@@ -264,11 +264,20 @@ export class AuditLoggerInterceptor<T> implements NestInterceptor {
           seen.add(value);
         }
         // Mask nested sensitive fields in deep objects if needed
-        if (
-          ['password', 'oldPassword', 'newPassword', 'pin', 'token'].includes(
-            key,
-          )
-        ) {
+        const fieldsToMask = [
+          'password',
+          'oldPassword',
+          'newPassword',
+          'pin',
+          'token',
+          'nin',
+          'bvn',
+          'phone',
+          'account_number',
+          'card_number',
+          'cvv',
+        ];
+        if (fieldsToMask.includes(key)) {
           return '********';
         }
         return value;
@@ -312,6 +321,12 @@ export class AuditLoggerInterceptor<T> implements NestInterceptor {
       'newPassword',
       'pin',
       'token',
+      'nin',
+      'bvn',
+      'phone',
+      'account_number',
+      'card_number',
+      'cvv',
     ];
     fieldsToMask.forEach((field) => {
       if (sanitized[field]) sanitized[field] = '********';

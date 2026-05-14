@@ -543,9 +543,75 @@ export class UserService extends AbstractService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    // Filter out internal/hashed fields before export
-    const { password, refresh_token, txn_pin, temp_login_pin, ...pii } = user;
-    return pii;
+    // 1. Get Wallet Data
+    let walletData = null;
+    try {
+      walletData = await this.externalApiCallsService.getData(
+        `${this.ACCT_BASE_URL}/accounts/wallet/user/${userId}`,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `Could not fetch wallet data for export: ${err.message}`,
+      );
+    }
+
+    // 2. Get Investment History (Aggregate from internal repos)
+    const mmfInvestments = await this.connection.manager.find(
+      MMFInvestmentRequest,
+      { where: { user_id: userId } },
+    );
+    const canaryInvestments = await this.connection.manager.find(
+      CanaryInvestmentRequest,
+      { where: { user_id: userId } },
+    );
+    const incomeInvestments = await this.connection.manager.find(
+      IncomeInvestmentRequest,
+      { where: { user_id: userId } },
+    );
+
+    // Filter out sensitive internal/hashed fields
+    const {
+      password,
+      refresh_token,
+      txn_pin,
+      temp_login_pin,
+      user_token,
+      ...profile
+    } = user;
+
+    return {
+      profile,
+      wallet: walletData?.data || walletData || null,
+      investments: {
+        mmf: mmfInvestments,
+        canary: canaryInvestments,
+        income: incomeInvestments,
+      },
+      export_date: new Date(),
+      compliance_notice:
+        'This data is provided in accordance with NDPR/GDPR data portability rights.',
+    };
+  }
+
+  async anonymizeUserAccount(userId: number) {
+    const user = await this.findUserById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    const anonymizedSuffix = crypto.randomBytes(4).toString('hex');
+
+    return this.update(userId, {
+      first_name: 'Anonymized',
+      last_name: 'User',
+      email: `deleted-${userId}-${anonymizedSuffix}@gdl.com.ng`,
+      phone: `+234000000${userId}`,
+      bvn: '00000000000',
+      nin: '00000000000',
+      address: 'REDACTED',
+      date_of_birth: new Date('1900-01-01'),
+      account_status: UserAccountStatus.BLOCKED,
+      is_deleted: true,
+      deleted_at: new Date(),
+    });
   }
 
   async deleteUserAccount(userId: number) {

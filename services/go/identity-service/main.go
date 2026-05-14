@@ -412,10 +412,31 @@ func (s *server) ExportData(ctx context.Context, req *pb.ExportDataRequest) (*pb
 }
 
 func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest) (*pb.DeleteAccountResponse, error) {
-	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Update("is_deleted", true).Error; err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to delete account")
+	// For NDPR/GDPR compliance, we anonymize PII instead of hard-delete to preserve txn history
+	now := time.Now()
+	updates := map[string]interface{}{
+		"first_name":              "Anonymized",
+		"last_name":               "User",
+		"email":                   fmt.Sprintf("deleted-%s-%d@gdl.com.ng", req.UserId, now.Unix()),
+		"phone_number":            nil,
+		"status":                  "DELETED",
+		"is_deleted":              true,
+		"deleted_at":              &now,
+		"address":                 "REDACTED",
+		"password_hash":           "REDACTED",
+		"login_pin_hash":          "REDACTED",
+		"transaction_pin_hash":    "REDACTED",
+		"privacy_policy_accepted": false,
+		"marketing_consent":       false,
 	}
-	return &pb.DeleteAccountResponse{Success: true, Message: "Account marked for deletion"}, nil
+
+	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Updates(updates).Error; err != nil {
+		log.Printf("[Security] Failed to anonymize account %s: %v", req.UserId, err)
+		return nil, status.Errorf(codes.Internal, "failed to anonymize account")
+	}
+
+	log.Printf("[Compliance] Account %s has been anonymized (Right to Erasure)", req.UserId)
+	return &pb.DeleteAccountResponse{Success: true, Message: "Account anonymized successfully"}, nil
 }
 
 func (s *server) UpdateConsent(ctx context.Context, req *pb.UpdateConsentRequest) (*pb.UpdateConsentResponse, error) {

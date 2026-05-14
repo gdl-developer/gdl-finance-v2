@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	account_pb "github.com/gdl/account-service/proto"
@@ -116,6 +117,7 @@ func (s *server) TransferBank(ctx context.Context, req *pb.BankTransferRequest) 
 	})
 
 	if err != nil || !bankoneResp.Success {
+		errorMessage := s.mapBankOneError(bankoneResp.Message)
 		// Log Failed Transaction
 		s.db.Create(&Transaction{
 			UserID:         uint(parseUint(req.FromUserId)),
@@ -128,7 +130,7 @@ func (s *server) TransferBank(ctx context.Context, req *pb.BankTransferRequest) 
 			Narration:      req.Narration,
 			CreatedAt:      time.Now(),
 		})
-		return &pb.TransferResponse{Success: false, Message: "BankOne Transfer Failed: " + bankoneResp.Message}, nil
+		return &pb.TransferResponse{Success: false, Message: errorMessage}, nil
 	}
 
 	// 6. LOG SUCCESS: Save to V1 Compatible Table
@@ -217,6 +219,30 @@ func (s *server) AccountEnquiry(ctx context.Context, req *pb.EnquiryRequest) (*p
 		Success:     true,
 		AccountName: resp.Message, // BankOne usually puts name in message/data
 	}, nil
+}
+
+func (s *server) mapBankOneError(rawError string) string {
+	// Replicating V1 hardened error mapping
+	switch {
+	case rawError == "":
+		return "Third-party service error. Please try again later."
+	case contains(rawError, "Insufficient"):
+		return "Insufficient funds in your source account."
+	case contains(rawError, "Limit Exceeded"):
+		return "Transaction exceeds your current banking limits."
+	case contains(rawError, "Invalid Account"):
+		return "The recipient account number is invalid."
+	case contains(rawError, "Timeout") || contains(rawError, "99"):
+		return "The bank is taking too long to respond. Please check your balance before retrying."
+	case contains(rawError, "Duplicate"):
+		return "A similar transaction was recently processed. Please wait a moment."
+	default:
+		return "Bank Transfer Failed: " + rawError
+	}
+}
+
+func contains(s, substr string) bool {
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
 
 func parseUint(s string) uint64 {
