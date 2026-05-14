@@ -2,87 +2,106 @@ services:
   # Infrastructure
   redis:
     image: redis:7-alpine
+    container_name: gdl-redis
     restart: always
     ports:
       - "6379:6379"
-    networks:
-      - gdl-net
-
-  zookeeper:
-    image: bitnami/zookeeper:3.9
-    restart: always
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - gdl-net
 
   kafka:
     image: bitnami/kafka:3.6
+    container_name: gdl-kafka
+    hostname: kafka
     restart: always
-    depends_on:
-      - zookeeper
     ports:
       - "9092:9092"
       - "29092:29092"
     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_BROKER_ID=1
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      # KRaft Settings
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
       - ALLOW_PLAINTEXT_LISTENER=yes
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - gdl-net
 
   # Go Services
   identity-service:
     image: registry.digitalocean.com/gdlfinancev2/identity-service:staging
+    container_name: gdl-identity
     restart: always
     environment:
       - PORT=50051
     env_file: .env.staging
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - gdl-net
 
   account-service:
     image: registry.digitalocean.com/gdlfinancev2/account-service:staging
+    container_name: gdl-account
     restart: always
     environment:
       - PORT=50052
       - KAFKA_BROKERS=kafka:9092
     env_file: .env.staging
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - gdl-net
 
   audit-service:
     image: registry.digitalocean.com/gdlfinancev2/audit-service:staging
+    container_name: gdl-audit
     restart: always
     environment:
       - PORT=50053
       - KAFKA_BROKERS=kafka:9092
     env_file: .env.staging
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     networks:
       - gdl-net
 
   bankone-connector:
     image: registry.digitalocean.com/gdlfinancev2/bankone-connector:staging
+    container_name: gdl-bankone
     restart: always
     environment:
       - PORT=50054
       - KAFKA_BROKERS=kafka:9092
     env_file: .env.staging
+    depends_on:
+      kafka:
+        condition: service_healthy
     networks:
       - gdl-net
 
   compliance-service:
     image: registry.digitalocean.com/gdlfinancev2/compliance-service:staging
+    container_name: gdl-compliance
     restart: always
     environment:
       - PORT=50055
@@ -92,6 +111,7 @@ services:
 
   notification-service:
     image: registry.digitalocean.com/gdlfinancev2/notification-service:staging
+    container_name: gdl-notification
     restart: always
     environment:
       - PORT=50056
@@ -101,6 +121,7 @@ services:
 
   reporting-service:
     image: registry.digitalocean.com/gdlfinancev2/reporting-service:staging
+    container_name: gdl-reporting
     restart: always
     environment:
       - PORT=50057
@@ -110,6 +131,7 @@ services:
 
   symplus-connector:
     image: registry.digitalocean.com/gdlfinancev2/symplus-connector:staging
+    container_name: gdl-symplus-conn
     restart: always
     environment:
       - PORT=50058
@@ -119,6 +141,7 @@ services:
 
   symplus-service:
     image: registry.digitalocean.com/gdlfinancev2/symplus-service:staging
+    container_name: gdl-symplus-svc
     restart: always
     environment:
       - PORT=50059
@@ -128,18 +151,21 @@ services:
 
   transaction-service:
     image: registry.digitalocean.com/gdlfinancev2/transaction-service:staging
+    container_name: gdl-transaction
     restart: always
     environment:
       - PORT=50060
     env_file: .env.staging
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - gdl-net
 
   # TypeScript Services
   api-gateway:
     image: registry.digitalocean.com/gdlfinancev2/api-gateway:staging
+    container_name: gdl-api-gateway
     restart: always
     environment:
       - PORT=3000
@@ -147,67 +173,16 @@ services:
       - "3000:3000"
     env_file: .env.staging
     depends_on:
-      - identity-service
-      - account-service
-    networks:
-      - gdl-net
-
-  dms-service:
-    image: registry.digitalocean.com/gdlfinancev2/dms-service:staging
-    restart: always
-    ports:
-      - "3001:3001"
-    env_file: .env.staging
-    networks:
-      - gdl-net
-
-  flexi-service:
-    image: registry.digitalocean.com/gdlfinancev2/flexi-service:staging
-    restart: always
-    ports:
-      - "3002:3002"
-    env_file: .env.staging
-    networks:
-      - gdl-net
-
-  hpa-service:
-    image: registry.digitalocean.com/gdlfinancev2/hpa-service:staging
-    restart: always
-    ports:
-      - "3003:3003"
-    env_file: .env.staging
-    networks:
-      - gdl-net
-
-  investment-service:
-    image: registry.digitalocean.com/gdlfinancev2/investment-service:staging
-    restart: always
-    ports:
-      - "3004:3004"
-    env_file: .env.staging
-    networks:
-      - gdl-net
-
-  loan-service:
-    image: registry.digitalocean.com/gdlfinancev2/loan-service:staging
-    restart: always
-    ports:
-      - "3005:3005"
-    env_file: .env.staging
-    networks:
-      - gdl-net
-
-  saveinvest-service:
-    image: registry.digitalocean.com/gdlfinancev2/saveinvest-service:staging
-    restart: always
-    ports:
-      - "3006:3006"
-    env_file: .env.staging
+      identity-service:
+        condition: service_started
+      account-service:
+        condition: service_started
     networks:
       - gdl-net
 
   user-service:
     image: registry.digitalocean.com/gdlfinancev2/user-service:staging
+    container_name: gdl-user
     restart: always
     environment:
       - PORT=3080
@@ -219,6 +194,7 @@ services:
 
   symplus-integration-service:
     image: registry.digitalocean.com/gdlfinancev2/symplus-integration-service:staging
+    container_name: gdl-symplus-integration
     restart: always
     environment:
       - PORT=3010
