@@ -63,7 +63,7 @@ func main() {
 
 	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
 	if kafkaBrokers == "" {
-		kafkaBrokers = "kafka:29092"
+		kafkaBrokers = "kafka:9092"
 	}
 	log.Printf("Connecting to Kafka at: %s", kafkaBrokers)
 	log.Printf("Connecting to Kafka at: %s", kafkaBrokers)

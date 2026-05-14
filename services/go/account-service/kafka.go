@@ -29,7 +29,7 @@ type InvestmentProcessedEvent struct {
 func StartKafkaConsumer(db *gorm.DB, rdb *RedisClient) {
 	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
 	if kafkaBrokers == "" {
-		kafkaBrokers = "localhost:9092"
+		kafkaBrokers = "kafka:9092"
 	}
 
 	// Consumer for balance updates
