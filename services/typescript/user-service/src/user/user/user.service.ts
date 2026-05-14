@@ -7,6 +7,7 @@ import {
   NotImplementedException,
   ConflictException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Connection, Repository, Between, Like, Not, IsNull } from 'typeorm';
@@ -56,6 +57,7 @@ import { FundRedemptionIncomeRequest } from '../investment-request-income/entiti
 
 @Injectable()
 export class UserService extends AbstractService {
+  private readonly logger = new Logger(UserService.name);
   private readonly env_config = this.envService.read();
   private readonly ACCT_BASE_URL = this.env_config.ACCT_BASE_URL;
   private readonly NOTN_BASE_URL = this.env_config.NOTN_BASE_URL;
