@@ -10,7 +10,7 @@ func SeedIdentityData(db *gorm.DB) {
 	log.Println("[Seeder] Starting Identity Service seeding...")
 
 	// 1. Seed KYC Levels (CBN Standards)
-	if db.Migrator().HasTable(&KYCLevel{}) {
+	if db.Migrator().HasTable(&KYCLevel{}) && db.Migrator().HasTable(&IdentityUser{}) && db.Migrator().HasTable(&IdentityCompany{}) {
 		levels := []KYCLevel{
 			{Level: 1, Name: "BRONZE", DailyLimit: 50000, MaxBalance: 300000, Requirements: "Phone, Name"},
 			{Level: 2, Name: "SILVER", DailyLimit: 200000, MaxBalance: 500000, Requirements: "BVN, Address"},

@@ -24,13 +24,13 @@ func main() {
 
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USERNAME")
+	dbIdentityUser := os.Getenv("DB_USERNAME")
 	dbPass := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 
 	// 2. Database Connection
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=skip-verify",
-		dbUser, dbPass, dbHost, dbPort, dbName)
+		dbIdentityUser, dbPass, dbHost, dbPort, dbName)
 
 	log.Printf("Connecting to database at %s:%s...", dbHost, dbPort)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
@@ -41,10 +41,11 @@ func main() {
 
 	// 3. Database Migrations & Seeding
 	log.Println("Starting database migrations...")
+
 	if err := db.AutoMigrate(
-		&User{}, &Role{}, &Permission{}, &BusinessUnit{}, &Branch{},
-		&OTP{}, &AuditLog{}, &ConsentAuditLog{}, &KYCLevel{},
-		&SecurityQuestion{}, &UserSecurityQuestion{}, &Company{}, &CompanyUser{},
+		&IdentityUser{}, &Role{}, &Permission{}, &BusinessUnit{}, &Branch{},
+		&IdentityOTP{}, &IdentityAuditLog{}, &ConsentIdentityAuditLog{}, &KYCLevel{},
+		&SecurityQuestion{}, &IdentityUserSecurityQuestion{}, &IdentityCompany{}, &IdentityCompanyIdentityUser{},
 	); err != nil {
 		log.Fatalf("CRITICAL: Database migration failed: %v", err)
 	}

@@ -17,19 +17,19 @@ type KYCLevel struct {
 	Requirements string  `gorm:"type:text" json:"requirements"` // JSON string of required docs
 }
 
-// UserSecurityQuestion stores a user's specific answers to security challenges.
+// IdentityUserSecurityQuestion stores a user's specific answers to security challenges.
 // OWASP: Answers are hashed before storage.
-type UserSecurityQuestion struct {
-	ID         uint   `gorm:"primaryKey;type:bigint unsigned"`
-	UserID     uint   `gorm:"column:user_id;index;type:bigint unsigned"`
-	Question   string `gorm:"column:question"`                         // V1 compatibility
-	Answer     string `gorm:"column:answer"`                           // V1 compatibility
-	QuestionID uint   `gorm:"type:bigint unsigned" json:"question_id"` // V2 future-proofing
-	AnswerHash string `json:"-"`                                       // V2 future-proofing
-	CreatedAt  time.Time
+type IdentityUserSecurityQuestion struct {
+	ID             uint   `gorm:"primaryKey;type:bigint unsigned"`
+	IdentityUserID uint   `gorm:"column:user_id;index;type:bigint unsigned"`
+	Question       string `gorm:"column:question"`                         // V1 compatibility
+	Answer         string `gorm:"column:answer"`                           // V1 compatibility
+	QuestionID     uint   `gorm:"type:bigint unsigned" json:"question_id"` // V2 future-proofing
+	AnswerHash     string `json:"-"`                                       // V2 future-proofing
+	CreatedAt      time.Time
 }
 
-func (UserSecurityQuestion) TableName() string {
+func (IdentityUserSecurityQuestion) TableName() string {
 	return "user_security_question"
 }
 
@@ -39,8 +39,8 @@ type SecurityQuestion struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// User represents the core user account in the system.
-type User struct {
+// IdentityUser represents the core user account in the system.
+type IdentityUser struct {
 	ID                 uint    `gorm:"primaryKey;type:bigint unsigned" json:"id"`
 	Email              string  `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
 	PasswordHash       string  `gorm:"column:password;not null" json:"-"`
@@ -50,11 +50,11 @@ type User struct {
 	Status             string  `gorm:"column:account_status;default:'PENDING_VERIFICATION'" json:"status"`
 	AccountType        string  `gorm:"column:account_type;default:'INDIVIDUAL'" json:"account_type"` // INDIVIDUAL or CORPORATE
 	IsTwoFactorEnabled bool    `gorm:"column:is_2fa_enabled;default:false" json:"is_2fa_enabled"`
-	UserType           string  `gorm:"column:user_type;default:'USER'" json:"user_type"`
+	IdentityUserType   string  `gorm:"column:user_type;default:'USER'" json:"user_type"`
 
 	// Corporate Linking
-	CompanyID *uint    `gorm:"type:bigint unsigned" json:"company_id"`
-	Company   *Company `gorm:"foreignKey:CompanyID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_user_company_corporate;" json:"company"`
+	IdentityCompanyAccountID *uint            `gorm:"type:bigint unsigned" json:"company_id"`
+	IdentityCompany          *IdentityCompany `gorm:"foreignKey:IdentityCompanyAccountID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_user_corporate_identity_v3;" json:"company"`
 
 	// Security PINs (Hashed)
 	LoginPinHash       string `json:"-"`
@@ -88,7 +88,7 @@ type User struct {
 	ReferredBy          string `json:"referred_by"`
 	HowHeardAboutUs     string `json:"how_heard_about_us"`
 	RegistrationChannel string `json:"registration_channel"`
-	UserTxnRef          string `json:"user_txn_ref"`
+	IdentityUserTxnRef  string `json:"user_txn_ref"`
 
 	// RBAC
 	RoleID uint `gorm:"type:bigint unsigned" json:"role_id"`
@@ -101,29 +101,33 @@ type User struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 }
 
-func (User) TableName() string {
+func (IdentityUser) TableName() string {
 	return "user_account"
 }
 
-type Company struct {
+type IdentityCompany struct {
 	ID              uint           `gorm:"primaryKey;type:bigint unsigned" json:"id"`
 	Name            string         `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
 	RegistrationNum string         `gorm:"type:varchar(255);uniqueIndex" json:"registration_num"` // RC Number
 	TaxID           string         `json:"tax_id"`
 	Address         string         `json:"address"`
 	Status          string         `gorm:"default:'PENDING_APPROVAL'" json:"status"`
-	Users           []User         `gorm:"foreignKey:CompanyID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_user_company_corporate;" json:"users"`
+	Employees       []IdentityUser `gorm:"foreignKey:IdentityCompanyAccountID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL,Name:fk_company_employees_rel_v1;" json:"employees"`
 	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 }
 
-type CompanyUser struct {
-	ID        uint   `gorm:"primaryKey;type:bigint unsigned"`
-	CompanyID uint   `gorm:"index;type:bigint unsigned"`
-	UserID    uint   `gorm:"index;type:bigint unsigned"`
-	Role      string `json:"role"` // OWNER, ADMIN, SIGNATORY
-	CreatedAt time.Time
+func (IdentityCompany) TableName() string {
+	return "companies"
+}
+
+type IdentityCompanyIdentityUser struct {
+	ID                       uint   `gorm:"primaryKey;type:bigint unsigned"`
+	IdentityCompanyAccountID uint   `gorm:"index;type:bigint unsigned"`
+	IdentityUserID           uint   `gorm:"index;type:bigint unsigned"`
+	Role                     string `json:"role"` // OWNER, ADMIN, SIGNATORY
+	CreatedAt                time.Time
 }
 
 type Role struct {
@@ -160,45 +164,45 @@ type Branch struct {
 	UpdatedAt      time.Time
 }
 
-// OTP represents One-Time Passwords for email verification, password reset, and 2FA.
+// IdentityOTP represents One-Time Passwords for email verification, password reset, and 2FA.
 // OWASP: Short-lived, used once, hashed if sensitive.
-type OTP struct {
-	ID        uint      `gorm:"primaryKey;type:bigint unsigned"`
-	UserID    uint      `gorm:"column:user_id;index;type:bigint unsigned"`
-	Code      string    `gorm:"column:request_otp;not null"`
-	Type      string    `gorm:"column:request_type;not null"` // VERIFICATION, RESET, 2FA
-	ExpiresAt time.Time `gorm:"column:expires_at;not null"`
-	IsUsed    bool      `gorm:"column:is_used;default:false"`
-	CreatedAt time.Time
+type IdentityOTP struct {
+	ID             uint      `gorm:"primaryKey;type:bigint unsigned"`
+	IdentityUserID uint      `gorm:"column:user_id;index;type:bigint unsigned"`
+	Code           string    `gorm:"column:request_otp;not null"`
+	Type           string    `gorm:"column:request_type;not null"` // VERIFICATION, RESET, 2FA
+	ExpiresAt      time.Time `gorm:"column:expires_at;not null"`
+	IsUsed         bool      `gorm:"column:is_used;default:false"`
+	CreatedAt      time.Time
 }
 
-func (OTP) TableName() string {
+func (IdentityOTP) TableName() string {
 	return "auth_actions"
 }
 
-// AuditLog tracks sensitive security events.
+// IdentityAuditLog tracks sensitive security events.
 // Fintech Standard: Immutable trail of login attempts and profile changes.
-type AuditLog struct {
-	ID        uint      `gorm:"primaryKey;type:bigint unsigned"`
-	UserID    uint      `gorm:"column:user_id;index;type:bigint unsigned"`
-	Action    string    `json:"action"` // LOGIN_SUCCESS, LOGIN_FAILURE, PASSWORD_CHANGE
-	IPAddress string    `gorm:"column:user_ip" json:"ip_address"`
-	UserAgent string    `json:"user_agent"`
-	CreatedAt time.Time `json:"created_at"`
+type IdentityAuditLog struct {
+	ID                uint      `gorm:"primaryKey;type:bigint unsigned"`
+	IdentityUserID    uint      `gorm:"column:user_id;index;type:bigint unsigned"`
+	Action            string    `json:"action"` // LOGIN_SUCCESS, LOGIN_FAILURE, PASSWORD_CHANGE
+	IPAddress         string    `gorm:"column:user_ip" json:"ip_address"`
+	IdentityUserAgent string    `json:"user_agent"`
+	CreatedAt         time.Time `json:"created_at"`
 }
 
-func (AuditLog) TableName() string {
+func (IdentityAuditLog) TableName() string {
 	return "login_history"
 }
 
-type ConsentAuditLog struct {
+type ConsentIdentityAuditLog struct {
 	ID                    uint      `gorm:"primaryKey;type:bigint unsigned"`
-	UserID                uint      `gorm:"index;type:bigint unsigned"`
+	IdentityUserID        uint      `gorm:"index;type:bigint unsigned"`
 	TermsAccepted         bool      `json:"terms_accepted"`
 	PrivacyPolicyAccepted bool      `json:"privacy_policy_accepted"`
 	MarketingConsent      bool      `json:"marketing_consent"`
 	PolicyVersion         string    `json:"policy_version"`
 	IPAddress             string    `json:"ip_address"`
-	UserAgent             string    `json:"user_agent"`
+	IdentityUserAgent     string    `json:"user_agent"`
 	CreatedAt             time.Time `json:"created_at"`
 }

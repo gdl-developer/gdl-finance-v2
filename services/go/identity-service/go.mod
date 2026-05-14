@@ -1,9 +1,9 @@
 module github.com/gdl/identity-service
 
-go 1.21
+go 1.25.0
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.48.0
 	google.golang.org/grpc v1.81.0

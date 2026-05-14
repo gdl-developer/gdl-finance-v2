@@ -26,12 +26,12 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 		return nil, status.Errorf(codes.Internal, "failed to hash password")
 	}
 
-	user := User{
+	user := IdentityUser{
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		Status:       "PENDING_VERIFICATION",
-		AccountType:  req.AccountType,
-		RoleID:       3, // Default to USER role
+		AccountType:  "INDIVIDUAL", // Defaulting as it's missing in current proto
+		RoleID:       3,            // Default to USER role
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
@@ -41,12 +41,12 @@ func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Reg
 	return &pb.RegisterResponse{
 		Success: true,
 		UserId:  fmt.Sprintf("%d", user.ID),
-		Message: "User registered successfully. Please verify your email.",
+		Message: "IdentityUser registered successfully. Please verify your email.",
 	}, nil
 }
 
 func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	var user User
+	var user IdentityUser
 	if err := s.db.Preload("Role").Where("email = ?", req.Email).First(&user).Error; err != nil {
 		return &pb.LoginResponse{Success: false, Message: "Invalid credentials"}, nil
 	}
@@ -81,7 +81,7 @@ func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 /* -------------------------- Profile & KYC -------------------------- */
 
 func (s *server) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
-	var user User
+	var user IdentityUser
 	if err := s.db.Preload("Role.Permissions").First(&user, req.UserId).Error; err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found")
 	}
@@ -112,7 +112,7 @@ func (s *server) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb
 }
 
 func (s *server) CompleteProfile(ctx context.Context, req *pb.CompleteProfileRequest) (*pb.CompleteProfileResponse, error) {
-	var user User
+	var user IdentityUser
 	if err := s.db.First(&user, req.UserId).Error; err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found")
 	}
@@ -129,7 +129,7 @@ func (s *server) CompleteProfile(ctx context.Context, req *pb.CompleteProfileReq
 	user.MaritalStatus = req.MaritalStatus
 	user.ReferredBy = req.ReferredBy
 	user.HowHeardAboutUs = req.HowHeardAboutUs
-	user.UserTxnRef = GenerateUserTxnRef()
+	user.IdentityUserTxnRef = GenerateUserTxnRef()
 	user.Status = "ACTIVE"
 
 	if err := s.db.Save(&user).Error; err != nil {
@@ -148,7 +148,7 @@ func (s *server) CompleteProfile(ctx context.Context, req *pb.CompleteProfileReq
 /* -------------------------- Compliance & Security -------------------------- */
 
 func (s *server) ExportData(ctx context.Context, req *pb.ExportDataRequest) (*pb.ExportDataResponse, error) {
-	var user User
+	var user IdentityUser
 	if err := s.db.Preload("Role").First(&user, req.UserId).Error; err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found")
 	}
@@ -162,7 +162,7 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 	now := time.Now()
 	updates := map[string]interface{}{
 		"first_name":              "Anonymized",
-		"last_name":               "User",
+		"last_name":               "IdentityUser",
 		"email":                   fmt.Sprintf("deleted-%s-%d@gdl.com.ng", req.UserId, now.Unix()),
 		"phone_number":            nil,
 		"status":                  "DELETED",
@@ -176,7 +176,7 @@ func (s *server) DeleteAccount(ctx context.Context, req *pb.DeleteAccountRequest
 		"marketing_consent":       false,
 	}
 
-	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Updates(updates).Error; err != nil {
+	if err := s.db.Model(&IdentityUser{}).Where("id = ?", req.UserId).Updates(updates).Error; err != nil {
 		log.Printf("[Security] Failed to anonymize account %s: %v", req.UserId, err)
 		return nil, status.Errorf(codes.Internal, "failed to anonymize account")
 	}
@@ -249,14 +249,14 @@ func (s *server) DeleteBusinessUnit(ctx context.Context, req *pb.DeleteBusinessU
 	return &pb.DeleteBusinessUnitResponse{Success: true, Message: "Business unit deleted successfully"}, nil
 }
 
-func (s *server) VerifyOTP(ctx context.Context, req *pb.VerifyOTPRequest) (*pb.VerifyOTPResponse, error) {
-	var user User
+func (s *server) VerifyIdentityOTP(ctx context.Context, req *pb.VerifyOTPRequest) (*pb.VerifyOTPResponse, error) {
+	var user IdentityUser
 	if err := s.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		return &pb.VerifyOTPResponse{Success: false, Message: "User not found"}, nil
+		return &pb.VerifyOTPResponse{Success: false, Message: "IdentityUser not found"}, nil
 	}
 
 	if req.Code != "123456" {
-		return &pb.VerifyOTPResponse{Success: false, Message: "Invalid OTP code"}, nil
+		return &pb.VerifyOTPResponse{Success: false, Message: "Invalid IdentityOTP code"}, nil
 	}
 
 	if user.Status == "INACTIVE" {
@@ -297,7 +297,7 @@ func (s *server) AssignRole(ctx context.Context, req *pb.AssignRoleRequest) (*pb
 		return nil, status.Errorf(codes.NotFound, "role not found")
 	}
 
-	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Update("role_id", role.ID).Error; err != nil {
+	if err := s.db.Model(&IdentityUser{}).Where("id = ?", req.UserId).Update("role_id", role.ID).Error; err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to assign role")
 	}
 
@@ -315,7 +315,7 @@ func (s *server) SetPIN(ctx context.Context, req *pb.SetPINRequest) (*pb.SetPINR
 		updateField = "transaction_pin_hash"
 	}
 
-	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Update(updateField, string(hashedPin)).Error; err != nil {
+	if err := s.db.Model(&IdentityUser{}).Where("id = ?", req.UserId).Update(updateField, string(hashedPin)).Error; err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update pin")
 	}
 
@@ -323,7 +323,7 @@ func (s *server) SetPIN(ctx context.Context, req *pb.SetPINRequest) (*pb.SetPINR
 }
 
 func (s *server) VerifyPIN(ctx context.Context, req *pb.VerifyPINRequest) (*pb.VerifyPINResponse, error) {
-	var user User
+	var user IdentityUser
 	if err := s.db.First(&user, req.UserId).Error; err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found")
 	}
@@ -345,7 +345,7 @@ func (s *server) VerifyPIN(ctx context.Context, req *pb.VerifyPINRequest) (*pb.V
 }
 
 func (s *server) CheckAccountStatus(ctx context.Context, req *pb.CheckStatusRequest) (*pb.CheckStatusResponse, error) {
-	var user User
+	var user IdentityUser
 	if err := s.db.First(&user, req.UserId).Error; err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found")
 	}
@@ -358,14 +358,14 @@ func (s *server) CheckAccountStatus(ctx context.Context, req *pb.CheckStatusRequ
 }
 
 func (s *server) UpdateKYCLevel(ctx context.Context, req *pb.UpdateKYCRequest) (*pb.UpdateKYCResponse, error) {
-	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Update("kyc_level_id", req.TargetLevel).Error; err != nil {
+	if err := s.db.Model(&IdentityUser{}).Where("id = ?", req.UserId).Update("kyc_level_id", req.TargetLevel).Error; err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update KYC level")
 	}
 	return &pb.UpdateKYCResponse{Success: true, Message: "KYC Level updated successfully"}, nil
 }
 
 func (s *server) GetKYCStatus(ctx context.Context, req *pb.GetKYCStatusRequest) (*pb.GetKYCStatusResponse, error) {
-	var user User
+	var user IdentityUser
 	if err := s.db.Preload("KYCLevel").First(&user, req.UserId).Error; err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found")
 	}
@@ -394,13 +394,13 @@ func (s *server) GetSecurityQuestions(ctx context.Context, req *pb.Empty) (*pb.S
 	return &pb.SecurityQuestionsResponse{Questions: pbQuestions}, nil
 }
 
-func (s *server) SetUserSecurityQuestions(ctx context.Context, req *pb.SetUserQuestionsRequest) (*pb.SetUserQuestionsResponse, error) {
+func (s *server) SetIdentityUserSecurityQuestions(ctx context.Context, req *pb.SetUserQuestionsRequest) (*pb.SetUserQuestionsResponse, error) {
 	for _, ans := range req.Answers {
 		hashedAnswer, _ := bcrypt.GenerateFromPassword([]byte(ans.Answer), bcrypt.DefaultCost)
-		userQuestion := UserSecurityQuestion{
-			UserID:     uint(uint64(parseUint(req.UserId))),
-			QuestionID: uint(ans.QuestionId),
-			AnswerHash: string(hashedAnswer),
+		userQuestion := IdentityUserSecurityQuestion{
+			IdentityUserID: uint(uint64(parseUint(req.UserId))),
+			QuestionID:     uint(ans.QuestionId),
+			AnswerHash:     string(hashedAnswer),
 		}
 		s.db.Create(&userQuestion)
 	}
@@ -408,7 +408,7 @@ func (s *server) SetUserSecurityQuestions(ctx context.Context, req *pb.SetUserQu
 }
 
 func (s *server) VerifySecurityAnswer(ctx context.Context, req *pb.VerifyAnswerRequest) (*pb.VerifyAnswerResponse, error) {
-	var userQuestion UserSecurityQuestion
+	var userQuestion IdentityUserSecurityQuestion
 	if err := s.db.Where("user_id = ? AND question_id = ?", req.UserId, req.QuestionId).First(&userQuestion).Error; err != nil {
 		return &pb.VerifyAnswerResponse{Success: false}, nil
 	}
@@ -447,7 +447,7 @@ func (s *server) UpdateConsent(ctx context.Context, req *pb.UpdateConsentRequest
 		"consent_timestamp":       time.Now(),
 	}
 
-	if err := s.db.Model(&User{}).Where("id = ?", req.UserId).Updates(updates).Error; err != nil {
+	if err := s.db.Model(&IdentityUser{}).Where("id = ?", req.UserId).Updates(updates).Error; err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update consent")
 	}
 
@@ -465,4 +465,4 @@ func GenerateUserTxnRef() string {
 	return fmt.Sprintf("GDL%d", randNum)
 }
 
-// ... existing handlers (VerifyOTP, SetPIN, VerifyPIN, etc. can follow this pattern)
+// ... existing handlers (VerifyIdentityOTP, SetPIN, VerifyPIN, etc. can follow this pattern)
