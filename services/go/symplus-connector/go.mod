@@ -1,6 +1,6 @@
 module github.com/gdl/symplus-connector
 
-go 1.21
+go 1.25.0
 
 replace github.com/gdl/symplus-connector/proto => ./proto
 
