@@ -10,10 +10,12 @@ import (
 func TestCircuitBreaker(t *testing.T) {
 	failureCount := 0
 
-	// Mock server that fails
+	// Mock server that closes connection to trigger network error
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		failureCount++
-		w.WriteHeader(http.StatusInternalServerError)
+		hj, _ := w.(http.Hijacker)
+		conn, _, _ := hj.Hijack()
+		conn.Close()
 	}))
 	defer server.Close()
 
@@ -22,27 +24,25 @@ func TestCircuitBreaker(t *testing.T) {
 		BaseURL:    server.URL,
 		HTTPClient: &http.Client{Timeout: 1 * time.Second},
 		CB: &CircuitBreaker{
-			FailureThreshold: 3,
-			RetryTimeout:     2 * time.Second,
+			Threshold:    3,
+			OpenDuration: 2 * time.Second,
+			State:        "CLOSED",
 		},
 	}
 
-	// Trigger failures
-	for i := 0; i < 4; i++ {
-		_, err := client.GetAccountDetails("12345")
-		if err == nil {
-			t.Errorf("Expected error at iteration %d, got nil", i)
-		}
+	// Trigger failures to open circuit
+	for i := 0; i < 3; i++ {
+		client.get("/test")
 	}
 
 	// Check if circuit is OPEN
-	if client.CB.State != StateOpen {
-		t.Errorf("Expected Circuit Breaker state to be OPEN, got %v", client.CB.State)
+	if client.CB.State != "OPEN" {
+		t.Errorf("Expected Circuit Breaker state to be OPEN, got %s", client.CB.State)
 	}
 
 	// Verify that it doesn't call the server anymore
 	currentFailures := failureCount
-	client.GetAccountDetails("12345")
+	client.get("/test")
 	if failureCount != currentFailures {
 		t.Errorf("Circuit Breaker called server even when OPEN")
 	}

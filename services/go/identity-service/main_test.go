@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	pb "gdl-v2-identity/proto"
+	pb "github.com/gdl/identity-service/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -41,14 +41,13 @@ func TestHealthCheck(t *testing.T) {
 	defer conn.Close()
 	client := pb.NewIdentityServiceClient(conn)
 
-	// Assuming there is a HealthCheck method in the proto
-	// If not, we can test a simple Login or Register with empty params
-	resp, err := client.ValidateToken(ctx, &pb.TokenRequest{Token: "invalid-token"})
+	// Test RefreshToken (which uses ValidateToken internally)
+	resp, err := client.RefreshToken(ctx, &pb.RefreshTokenRequest{RefreshToken: "invalid-token"})
 	if err != nil {
-		t.Errorf("ValidateToken failed: %v", err)
+		t.Errorf("RefreshToken failed: %v", err)
 	}
 
-	if resp.Valid != false {
-		t.Errorf("Expected token to be invalid, got valid")
+	if resp.Success != false {
+		t.Errorf("Expected RefreshToken to fail with invalid token, got success")
 	}
 }
