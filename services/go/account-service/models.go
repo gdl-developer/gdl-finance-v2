@@ -7,9 +7,9 @@ import (
 )
 
 type Account struct {
-	ID            uint    `gorm:"primaryKey;type:int(11) unsigned" json:"id"`
+	ID            uint    `gorm:"primaryKey;type:bigint unsigned" json:"id"`
 	AccountNumber string  `gorm:"column:nuban_account;uniqueIndex" json:"account_number"`
-	UserID        uint    `gorm:"column:user_id;index;type:int(11) unsigned;not null" json:"user_id"`
+	UserID        uint    `gorm:"column:user_id;index;type:bigint unsigned;not null" json:"user_id"`
 	UserRef       string  `gorm:"column:user_account_ref;uniqueIndex" json:"user_account_ref"`
 	Balance       float64 `gorm:"column:available_balance;default:0" json:"balance"`
 	LedgerBalance float64 `gorm:"column:ledger_balance;default:0" json:"ledger_balance"`

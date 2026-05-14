@@ -5,8 +5,8 @@ import (
 )
 
 type Transaction struct {
-	ID               uint      `gorm:"primaryKey;type:int(11) unsigned" json:"id"`
-	UserID           uint      `gorm:"column:user_id;index;type:int(11) unsigned" json:"user_id"`
+	ID               uint      `gorm:"primaryKey;type:bigint unsigned" json:"id"`
+	UserID           uint      `gorm:"column:user_id;index;type:bigint unsigned" json:"user_id"`
 	TxnRef           string    `gorm:"column:txn_ref;uniqueIndex;type:varchar(50)" json:"txn_ref"`
 	RequestRef       string    `gorm:"column:request_ref;uniqueIndex;type:varchar(50)" json:"request_ref"`
 	Amount           float64   `gorm:"column:amount;type:decimal(20,2)" json:"amount"`
