@@ -230,4 +230,4 @@ networks:
     driver: bridge
 
 volumes:
-  pg_data:
+  redis_data:
