@@ -5,26 +5,35 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    networks:
+      - gdl-net
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: bitnami/zookeeper:3.9
     restart: always
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - gdl-net
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: bitnami/kafka:3.6
     restart: always
     depends_on:
       - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_BROKER_ID=1
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    networks:
+      - gdl-net
 
   # Go Services
   identity-service:
@@ -35,6 +44,8 @@ services:
     env_file: .env.staging
     depends_on:
       - redis
+    networks:
+      - gdl-net
 
   account-service:
     image: registry.digitalocean.com/gdlfinancev2/account-service:staging
@@ -44,6 +55,8 @@ services:
     env_file: .env.staging
     depends_on:
       - redis
+    networks:
+      - gdl-net
 
   audit-service:
     image: registry.digitalocean.com/gdlfinancev2/audit-service:staging
@@ -53,6 +66,8 @@ services:
     env_file: .env.staging
     depends_on:
       - kafka
+    networks:
+      - gdl-net
 
   bankone-connector:
     image: registry.digitalocean.com/gdlfinancev2/bankone-connector:staging
@@ -60,6 +75,8 @@ services:
     environment:
       - PORT=50054
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   compliance-service:
     image: registry.digitalocean.com/gdlfinancev2/compliance-service:staging
@@ -67,6 +84,8 @@ services:
     environment:
       - PORT=50055
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   notification-service:
     image: registry.digitalocean.com/gdlfinancev2/notification-service:staging
@@ -74,6 +93,8 @@ services:
     environment:
       - PORT=50056
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   reporting-service:
     image: registry.digitalocean.com/gdlfinancev2/reporting-service:staging
@@ -81,6 +102,8 @@ services:
     environment:
       - PORT=50057
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   symplus-connector:
     image: registry.digitalocean.com/gdlfinancev2/symplus-connector:staging
@@ -88,6 +111,8 @@ services:
     environment:
       - PORT=50058
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   symplus-service:
     image: registry.digitalocean.com/gdlfinancev2/symplus-service:staging
@@ -95,6 +120,8 @@ services:
     environment:
       - PORT=50059
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   transaction-service:
     image: registry.digitalocean.com/gdlfinancev2/transaction-service:staging
@@ -104,6 +131,8 @@ services:
     env_file: .env.staging
     depends_on:
       - redis
+    networks:
+      - gdl-net
 
   # TypeScript Services
   api-gateway:
@@ -117,6 +146,8 @@ services:
     depends_on:
       - identity-service
       - account-service
+    networks:
+      - gdl-net
 
   dms-service:
     image: registry.digitalocean.com/gdlfinancev2/dms-service:staging
@@ -124,6 +155,8 @@ services:
     ports:
       - "3001:3001"
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   flexi-service:
     image: registry.digitalocean.com/gdlfinancev2/flexi-service:staging
@@ -131,6 +164,8 @@ services:
     ports:
       - "3002:3002"
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   hpa-service:
     image: registry.digitalocean.com/gdlfinancev2/hpa-service:staging
@@ -138,6 +173,8 @@ services:
     ports:
       - "3003:3003"
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   investment-service:
     image: registry.digitalocean.com/gdlfinancev2/investment-service:staging
@@ -145,6 +182,8 @@ services:
     ports:
       - "3004:3004"
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   loan-service:
     image: registry.digitalocean.com/gdlfinancev2/loan-service:staging
@@ -152,6 +191,8 @@ services:
     ports:
       - "3005:3005"
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   saveinvest-service:
     image: registry.digitalocean.com/gdlfinancev2/saveinvest-service:staging
@@ -159,6 +200,8 @@ services:
     ports:
       - "3006:3006"
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   user-service:
     image: registry.digitalocean.com/gdlfinancev2/user-service:staging
@@ -168,6 +211,8 @@ services:
     ports:
       - "3080:3080"
     env_file: .env.staging
+    networks:
+      - gdl-net
 
   symplus-integration-service:
     image: registry.digitalocean.com/gdlfinancev2/symplus-integration-service:staging
@@ -177,6 +222,12 @@ services:
     ports:
       - "3010:3010"
     env_file: .env.staging
+    networks:
+      - gdl-net
+
+networks:
+  gdl-net:
+    driver: bridge
 
 volumes:
   pg_data:
