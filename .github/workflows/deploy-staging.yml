@@ -159,11 +159,11 @@ jobs:
             doctl registry login
 
             # Run the full deployment sequence in the background
-            # Logs written to /root/deploy.log for debugging
+            # Note: -v is used to clear old volumes for the Zookeeper -> KRaft transition
             nohup bash -c "
-              docker compose -f docker-compose.staging.yml down --remove-orphans &&
+              docker compose -f docker-compose.staging.yml down -v --remove-orphans &&
               docker compose -f docker-compose.staging.yml pull &&
-              docker compose -f docker-compose.staging.yml up -d --build &&
+              docker compose -f docker-compose.staging.yml up -d &&
               docker image prune -f
             " > /root/deploy.log 2>&1 &
 
