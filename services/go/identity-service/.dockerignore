@@ -1,0 +1,7 @@
+vendor/
+bin/
+*.log
+.git/
+.env
+identity-service
+identity.db
