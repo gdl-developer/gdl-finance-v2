@@ -114,24 +114,39 @@ jobs:
       - name: Build and Push Service
         run: |
           SERVICE_NAME="${{ matrix.service }}"
+          MAX_RETRIES=3
 
-          # Go services — build from services/go/ root so sibling deps (e.g. bankone-connector) resolve
-          if [ -d "./services/go/$SERVICE_NAME" ]; then
-            docker build --platform linux/amd64 \
-              -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging \
-              --build-arg SERVICE_DIR=$SERVICE_NAME \
-              -f ./services/go/$SERVICE_NAME/Dockerfile \
-              ./services/go
+          build_and_push() {
+            local attempt=$1
+            echo "Attempt $attempt of $MAX_RETRIES..."
+            
+            if [ -d "./services/go/$SERVICE_NAME" ]; then
+              docker build --platform linux/amd64 \
+                -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging \
+                --build-arg SERVICE_DIR=$SERVICE_NAME \
+                -f ./services/go/$SERVICE_NAME/Dockerfile \
+                ./services/go
+            elif [ -d "./services/typescript/$SERVICE_NAME" ]; then
+              docker build --platform linux/amd64 \
+                -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging \
+                -f ./services/typescript/$SERVICE_NAME/Dockerfile \
+                .
+            fi
+            
+            docker push registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging
+          }
 
-          # TypeScript services — build from REPO ROOT so proto/ directory is available in build context
-          elif [ -d "./services/typescript/$SERVICE_NAME" ]; then
-            docker build --platform linux/amd64 \
-              -t registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging \
-              -f ./services/typescript/$SERVICE_NAME/Dockerfile \
-              .
-          fi
-
-          docker push registry.digitalocean.com/gdlfinancev2/$SERVICE_NAME:staging
+          for i in $(seq 1 $MAX_RETRIES); do
+            if build_and_push $i; then
+              echo "Build and push successful!"
+              exit 0
+            else
+              echo "Build or push failed. Retrying in 15s..."
+              sleep 15
+            fi
+          done
+          echo "Final attempt failed after $MAX_RETRIES retries."
+          exit 1
 
   deploy:
     needs: build_and_push
