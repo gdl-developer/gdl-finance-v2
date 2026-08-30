@@ -42,7 +42,7 @@ func (c *SymplusClient) RotateKey() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	url := fmt.Sprintf("https://clientportal.housemoni.ng/ords/api/core/v3/GetKey/%s/", c.ClientKey)
+	url := fmt.Sprintf("https://clientportal.gdl.com.ng/ords/api/core/v3/GetKey/%s/", c.ClientKey)
 	resp, err := c.HTTPClient.Get(url)
 	if err != nil {
 		log.Printf("Failed to rotate Symplus key: %v", err)

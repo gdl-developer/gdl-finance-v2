@@ -100,9 +100,8 @@ export class CustomerManagementService extends AbstractService {
   }
 
   async getCustomerByEmailV3(email: string) {
-    const full_url = `https://clientportal.housemoni.ng/ords/api/core/v3/GetCustomerByEmail/${email}/`;
+    const full_url = `https://clientportal.gdl.com.ng/ords/api/core/v3/GetCustomerByEmail/${email}/`;
 
-    // Keys provided by user request
     const headers = {
       authorization_key: "svfdlkndfklfd",
       client_key: "vfdklndfkdf",

@@ -120,85 +120,85 @@ export class VirtualAccountService {
       }
 
       // STEP 2.1: Create UBA wallet independently if it doesn't exist
-      if (!hasUbaWallet) {
-        const ubaUrl = `${this.accountBaseUrl}/uba/create-virtual-account`;
-        try {
-          this.logger.log(`Sending request to UBA API: ${ubaUrl}`);
+      // if (!hasUbaWallet) {
+      //   const ubaUrl = `${this.accountBaseUrl}/uba/create-virtual-account`;
+      //   try {
+      //     this.logger.log(`Sending request to UBA API: ${ubaUrl}`);
 
-          // UBA requires BVN and customer reference
-          const ubaPayload = {
-            ...rmbPayload,
-            bvn: wallet?.bvn || user.nin, // Fallback to NIN if BVN is missing
-            customerReference: user.user_txn_ref,
-            firstname: user.first_name,
-            lastname: user.last_name,
-          };
+      //     // UBA requires BVN and customer reference
+      //     const ubaPayload = {
+      //       ...rmbPayload,
+      //       bvn: wallet?.bvn || user.nin, // Fallback to NIN if BVN is missing
+      //       customerReference: user.user_txn_ref,
+      //       firstname: user.first_name,
+      //       lastname: user.last_name,
+      //     };
 
-          const ubaResponse = await this.externalApiCallsService.postData(
-            ubaUrl,
-            ubaPayload,
-          );
+      //     const ubaResponse = await this.externalApiCallsService.postData(
+      //       ubaUrl,
+      //       ubaPayload,
+      //     );
 
-          // Log the FULL response so we can see the exact field names from UBA
-          this.logger.log(
-            `[UBA_RAW] Full response: ${JSON.stringify(ubaResponse, null, 2)}`,
-          );
-          this.logger.log(
-            `[UBA_RAW] data keys: ${
-              ubaResponse?.data
-                ? Object.keys(ubaResponse.data).join(', ')
-                : 'no data field'
-            }`,
-          );
+      //     // Log the FULL response so we can see the exact field names from UBA
+      //     this.logger.log(
+      //       `[UBA_RAW] Full response: ${JSON.stringify(ubaResponse, null, 2)}`,
+      //     );
+      //     this.logger.log(
+      //       `[UBA_RAW] data keys: ${
+      //         ubaResponse?.data
+      //           ? Object.keys(ubaResponse.data).join(', ')
+      //           : 'no data field'
+      //       }`,
+      //     );
 
-          // Extract account number — UBA uses vNUBAN nested in provider_response
-          const ubaData = ubaResponse?.data;
-          const ubaAccountNumber =
-            ubaData?.data?.provider_response?.virtualAccount?.vNUBAN ||
-            ubaData?.accountNumber ||
-            ubaData?.accountno ||
-            ubaData?.account_number ||
-            ubaData?.virtualAccountNumber ||
-            ubaData?.virtual_account_number ||
-            ubaData?.AccountNumber;
+      //     // Extract account number — UBA uses vNUBAN nested in provider_response
+      //     const ubaData = ubaResponse?.data;
+      //     const ubaAccountNumber =
+      //       ubaData?.data?.provider_response?.virtualAccount?.vNUBAN ||
+      //       ubaData?.accountNumber ||
+      //       ubaData?.accountno ||
+      //       ubaData?.account_number ||
+      //       ubaData?.virtualAccountNumber ||
+      //       ubaData?.virtual_account_number ||
+      //       ubaData?.AccountNumber;
 
-          this.logger.log(
-            `[UBA_RAW] Resolved account number: ${ubaAccountNumber}`,
-          );
+      //     this.logger.log(
+      //       `[UBA_RAW] Resolved account number: ${ubaAccountNumber}`,
+      //     );
 
-          // If UBA succeeded and we have an account number, create the wallet record
-          if (ubaResponse?.success && ubaAccountNumber) {
-            await this.virtualWalletService.createVirtualWallet(
-              userId,
-              wallet,
-              fetchUserNuban,
-              { ...ubaData, accountNumber: ubaAccountNumber }, // normalise field name
-            );
-            this.logger.log(
-              `[VirtualAccount] UBA wallet record created for user ${userId}, account: ${ubaAccountNumber}`,
-            );
-          } else {
-            this.logger.warn(
-              `[VirtualAccount] UBA response received but no account number found. success=${
-                ubaResponse?.success
-              }, data=${JSON.stringify(ubaData)}`,
-            );
-          }
-        } catch (ubaError) {
-          this.logger.error(
-            `[VirtualAccount] UBA account creation failed for user ${userId}: ${ubaError.message}`,
-          );
-          // Partially succeed — don't block RMB wallet creation
-        }
-      } else {
-        this.logger.log(
-          `[VirtualAccount] UBA wallet already exists for user ${userId}, skipping UBA creation.`,
-        );
-      }
+      //     // If UBA succeeded and we have an account number, create the wallet record
+      //     if (ubaResponse?.success && ubaAccountNumber) {
+      //       await this.virtualWalletService.createVirtualWallet(
+      //         userId,
+      //         wallet,
+      //         fetchUserNuban,
+      //         { ...ubaData, accountNumber: ubaAccountNumber }, // normalise field name
+      //       );
+      //       this.logger.log(
+      //         `[VirtualAccount] UBA wallet record created for user ${userId}, account: ${ubaAccountNumber}`,
+      //       );
+      //     } else {
+      //       this.logger.warn(
+      //         `[VirtualAccount] UBA response received but no account number found. success=${
+      //           ubaResponse?.success
+      //         }, data=${JSON.stringify(ubaData)}`,
+      //       );
+      //     }
+      //   } catch (ubaError) {
+      //     this.logger.error(
+      //       `[VirtualAccount] UBA account creation failed for user ${userId}: ${ubaError.message}`,
+      //     );
+      //     // Partially succeed — don't block RMB wallet creation
+      //   }
+      // } else {
+      //   this.logger.log(
+      //     `[VirtualAccount] UBA wallet already exists for user ${userId}, skipping UBA creation.`,
+      //   );
+      // }
 
       // STEP 3: Create/return the RMB virtual wallet record
       let virtualWallet;
-      if (!hasRmbWallet && rmbResponse) {
+      if (!hasUbaWallet && rmbResponse) {
         this.logger.log(`Creating RMB virtual wallet for user ID: ${userId}`);
         virtualWallet = await this.virtualWalletService.createVirtualWallet(
           userId,

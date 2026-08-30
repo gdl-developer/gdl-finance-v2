@@ -181,7 +181,7 @@ services:
       - gdl-net
 
   user-service:
-    image: registry.digitalocean.com/gdlfinancev2/user-service:staging
+    image: registry.digitalocean.com/user-service/user-service:latest
     container_name: gdl-user
     restart: always
     environment:

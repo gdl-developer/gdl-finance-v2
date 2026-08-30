@@ -817,7 +817,7 @@ export class InvestmentRequestService {
           principal: best.COST_VALUE,
           market_price: best.CURRENT_BID_PRICE,
           market_value: best.CURRENT_VALUE,
-          accrued_interest: best.TOTAL_ACCRUED_INTEREST,
+          accrued_interest: best.OUTSTANDING_ACCRUED_INTEREST,
           accrued_interest_percent: 0, // Not explicitly provided in the GetFundAccounts item
         },
       };

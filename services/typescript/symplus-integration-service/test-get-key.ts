@@ -6,7 +6,7 @@ const SYMPLUS_CLIENT_KEY = process.env.SYMPLUS_CLIENT_KEY;
 
 async function getKey() {
   try {
-    const url = `https://clientportal.housemoni.ng/ords/api/core/v3/GetKey/${SYMPLUS_CLIENT_KEY}`;
+    const url = `https://clientportal.gdl.com.ng/ords/api/core/v3/GetKey/${SYMPLUS_CLIENT_KEY}`;
     console.log(`Fetching key from: ${url}`);
     const response = await axios.get(url);
     console.log("Response status:", response.status);

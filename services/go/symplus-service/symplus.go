@@ -124,7 +124,7 @@ func (c *SymplusClient) fetchNewPublicKey() {
 	defer c.mu.Unlock()
 
 	log.Println("🔄 Fetching new public key from Housemoni ORDS...")
-	url := fmt.Sprintf("https://clientportal.housemoni.ng/ords/api/core/v3/GetKey/%s/", c.ClientKey)
+	url := fmt.Sprintf("https://clientportal.gdl.com.ng/ords/api/core/v3/GetKey/%s/", c.ClientKey)
 
 	resp, err := http.Get(url)
 	if err != nil {

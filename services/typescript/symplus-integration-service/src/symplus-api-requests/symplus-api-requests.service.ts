@@ -10,7 +10,6 @@ import {
 import { Repository } from "typeorm";
 import { SynchronousApiCalls } from "src/common/external-api-calls/sychronous-api-calls-for-payment-gateways.service";
 import { encrypt } from "src/common/utils/crypto-hash-helper";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const sha256 = require("sha256");
 
 import * as dotenv from "dotenv";
@@ -65,6 +64,19 @@ export class SymplusApiRequestsService extends AbstractService {
           authorization_key: SYMPLUS_AUTHKEY,
           client_key: CLIENT_KEY,
         };
+
+        let targetId = 'Unknown';
+        if (postCallBody) {
+          if (postCallBody.deposit?.[0]?.customer) targetId = `Customer: ${postCallBody.deposit[0].customer}`;
+          else if (postCallBody.deposit?.[0]?.account) targetId = `Account: ${postCallBody.deposit[0].account}`;
+          else if (postCallBody.subscription?.[0]?.account) targetId = `Account: ${postCallBody.subscription[0].account}`;
+          else if (postCallBody.redemption?.[0]?.account) targetId = `Account: ${postCallBody.redemption[0].account}`;
+          else if (postCallBody.customer) targetId = `Customer: ${postCallBody.customer}`;
+          else if (postCallBody.account) targetId = `Account: ${postCallBody.account}`;
+        }
+
+        console.log(`[SYMPLUS REQUEST] POST ${call_data.url} | SymplusID/Account: ${targetId}`);
+        console.log(`[SYMPLUS REQUEST PAYLOAD]:`, call_data.body);
 
         if (attempt > 1) {
           console.log(
@@ -519,7 +531,7 @@ export class SymplusApiRequestsService extends AbstractService {
   async getNewPublicKey() {
     try {
       console.log("🔄 Fetching new public key...");
-      const url = `https://clientportal.housemoni.ng/ords/api/core/v3/GetKey/${SYMPLUS_CLIENT_KEY}/`;
+      const url = `https://clientportal.gdl.com.ng/ords/api/core/v3/GetKey/${SYMPLUS_CLIENT_KEY}/`;
 
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const axios = require("axios");
